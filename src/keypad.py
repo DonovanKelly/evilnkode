@@ -23,7 +23,7 @@ class Keypad:
 
         return Keypad(keypad=set_view.T, k=k, p=p, keypad_cache=[])
 
-    def partial_shuffle(self):
+    def split_shuffle(self):
         shuffled_sets = self._shuffle()
         sorted_set = shuffled_sets[np.argsort(shuffled_sets[:, 0])]
 

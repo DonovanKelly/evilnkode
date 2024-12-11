@@ -13,9 +13,9 @@ class Benchmark:
 
 class ShuffleTypes(Enum):
     FULL_SHUFFLE = "FULL_SHUFFLE"
-    PARTIAL_SHUFFLE = "PARTIAL_SHUFFLE"
+    SPLIT_SHUFFLE = "SPLIT_SHUFFLE"
 
-def observations(number_of_keys, properties_per_key, passcode_len, shuffle_type: ShuffleTypes = ShuffleTypes.PARTIAL_SHUFFLE ):
+def observations(number_of_keys, properties_per_key, passcode_len, shuffle_type: ShuffleTypes = ShuffleTypes.SPLIT_SHUFFLE):
     k = number_of_keys
     p = properties_per_key
     n = passcode_len
@@ -31,14 +31,14 @@ def observations(number_of_keys, properties_per_key, passcode_len, shuffle_type:
             match shuffle_type:
                 case ShuffleTypes.FULL_SHUFFLE:
                     keypad.full_shuffle()
-                case ShuffleTypes.PARTIAL_SHUFFLE:
-                    keypad.partial_shuffle()
+                case ShuffleTypes.SPLIT_SHUFFLE:
+                    keypad.split_shuffle()
                 case _:
                     raise Exception(f"no shuffle type {shuffle_type}")
 
     return obs_gen()
 
-def partial_shuffle_benchmark(
+def split_shuffle_benchmark(
         number_of_keys: int,
         properties_per_key: int,
         passcode_len: int,

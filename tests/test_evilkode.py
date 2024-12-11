@@ -19,7 +19,7 @@ def observations(number_of_keys, properties_per_key, passcode_len):
                 keypad=keypad.keypad.copy(),
                 key_selection=keypad.key_entry(target_passcode=nkode)
             )
-            keypad.partial_shuffle()
+            keypad.split_shuffle()
 
     return obs_gen()
 
