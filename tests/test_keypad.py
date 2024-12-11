@@ -12,12 +12,20 @@ def test_keypad():
 
     assert keypad.key_entry([8, 5, 6, 11]) == [0,1,2,0]
 
-def test_shuffle():
+def test_partial_shuffle():
     p = 4  # properties_per_key
     k = 3  # number_of_keys
     keypad = Keypad.new_keypad(k, p)
     print(keypad.keypad)
     keypad.partial_shuffle()
     print(keypad.keypad)
-    keypad.partial_shuffle()
+
+
+def test_full_shuffle():
+    p = 4  # properties_per_key
+    k = 3  # number_of_keys
+    keypad = Keypad.new_keypad(k, p)
     print(keypad.keypad)
+    keypad.full_shuffle()
+    print(keypad.keypad)
+

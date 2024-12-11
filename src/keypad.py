@@ -27,14 +27,15 @@ class Keypad:
         shuffled_sets = self._shuffle()
         sorted_set = shuffled_sets[np.argsort(shuffled_sets[:, 0])]
 
-        while sorted_set in self.keypad_cache:
+        while str(sorted_set) in self.keypad_cache:
             shuffled_sets = self._shuffle()
             sorted_set = shuffled_sets[np.argsort(shuffled_sets[:, 0])]
 
-        self.keypad_cache.append(sorted_set)
+        self.keypad_cache.append(str(sorted_set))
         self.keypad_cache = self.keypad_cache[:self.max_cache_size]
 
         self.keypad = shuffled_sets
+
 
     def _shuffle(self) -> np.ndarray:
         column_permutation = np.random.permutation(self.p)
@@ -43,6 +44,10 @@ class Keypad:
         shuffled_sets = self.keypad.copy()
         shuffled_sets[:, column_subset] = shuffled_sets[perm_indices, :][:, column_subset]
         return shuffled_sets
+
+    def full_shuffle(self):
+        shuffled_matrix = np.array([np.random.permutation(row) for row in self.keypad.T])
+        self.keypad = shuffled_matrix.T
 
     def key_entry(self, target_passcode: list[int]) -> list[int]:
         """
