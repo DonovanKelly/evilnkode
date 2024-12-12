@@ -1,6 +1,5 @@
 import math
 from dataclasses import dataclass
-from itertools import chain
 from typing import Iterator
 
 
