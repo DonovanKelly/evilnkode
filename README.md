@@ -5,7 +5,7 @@ Simulated nKode Cracker
 ## Installation
 
 - Python version 3.10 or greater is required
-- Install conda (or your preferred tool) for environment management
+- Install anaconda (or your preferred tool for environment management)
 
 ### Using conda
 ```bash
