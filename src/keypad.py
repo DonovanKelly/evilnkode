@@ -7,7 +7,7 @@ class Keypad:
     keypad: np.ndarray
     k: int # number of keys
     p: int  # properties per key
-    keypad_cache: list
+    keypad_cache: list #
     max_cache_size: int = 100
 
     @staticmethod
@@ -24,16 +24,25 @@ class Keypad:
         return Keypad(keypad=set_view.T, k=k, p=p, keypad_cache=[])
 
     def split_shuffle(self):
+        """
+        This is a modified split shuffle.
+        It doesn't shuffle the keys only the properties in the keys.
+        Shuffling the keys makes it hard for people to guess an nKode not a machine.
+        This split shuffle includes a cache to prevent the same configuration from being used.
+        This cache is not in any other implementation.
+        Testing suggests it's not necessary.
+        Getting the same keypad twice over 100 shuffles is very unlikely.
+        """
         shuffled_sets = self._shuffle()
+        # Sort the shuffled sets by the first column
         sorted_set = shuffled_sets[np.argsort(shuffled_sets[:, 0])]
-
         while str(sorted_set) in self.keypad_cache:
+            # continue shuffling until we get a unique configuration
             shuffled_sets = self._shuffle()
             sorted_set = shuffled_sets[np.argsort(shuffled_sets[:, 0])]
 
         self.keypad_cache.append(str(sorted_set))
         self.keypad_cache = self.keypad_cache[:self.max_cache_size]
-
         self.keypad = shuffled_sets
 
 
