@@ -481,9 +481,9 @@ Shuffle 3 [attribute 0,4,5,6] [a,e,f,g]
 |key 0 | a1  | b0  | c0  | d0  | e1  | f1  | g1  | h0  |
 |key 1 | a0  | b1  | c1  | d1  | e0  | f0  | g0  | h1  |
 
-So before observing the input for the 4th attempt:
-Hits for each key from prior information:
-[0][10][0][0][0][10][0][01]
+So before observing the input for the 4th attempt:  
+Hits for each key from prior information:  
+[0][10][0][0][0][10][0][01]  
 (So several of the correct keys are identified, only letters in positions 1,5,7 are unknown)
 
 
@@ -530,3 +530,11 @@ This experiment makes us think of two learning tasks.
 3) Could you get the correct entry even with partial information?
 4) Probabilistic attack for guessing the correct sequence? 
     First split shuffle evenly splits things, so you don't gain much. Subsequent shuffles will start to bias toward the correct passcode. The trade-off is that if you don't shuffle a position then the intruder can just use the same input as before and can enter the correct key without knowing the correct icon, but if you do shuffle, then the intruder learns more information.
+
+
+
+One key I’m understanding better now: There’s a trade-off between (1) information being learned by the intruder and (2) the chances that an intruder could key in a correct key-sequence for each subsequent observation / login attempt.
+
+If an attribute is not shuffled, then that increases the chance for (2), and if an attribute is shuffled that increases the chance for (1). 
+
+I think that when the selection of the sets is randomized like you’re doing, you’re getting the optimal trade-off between these two things. However, there’s also probably a strategy that might be even more optimal than just randomly choosing a split each time. If each shuffle chooses for its set of half of the attributes: half from the attributes that were previously shuffled and half from the attributes that weren’t shuffled in the previous shuffle. You could look back essentially log_2(p) steps (where p is the number of attributes) and similarly subdivide. This seems to be a way to balance the tradeoff for consecutive observations.
