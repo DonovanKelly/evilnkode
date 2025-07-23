@@ -1,4 +1,4 @@
-# nKode analysis
+ # nKode analysis
 
 Luke Oeding (Auburn University)
 
@@ -290,7 +290,7 @@ Intersect:
 
 Passcode is not learned yet.
 
-After a 3rd shuffle [attribute 1,3]
+After a 2nd shuffle [attribute 1,3]
 
 |key   | p0 | p1 | p2 | p3 |
 |:----:|:--:|:--:|:--:|:--:|
@@ -311,3 +311,222 @@ Intersect:
 {a0},{c1},{c1},{d0}.
 
 Passcode learned in 3.
+
+
+Here's the case $p = 4$ and an 8 letter passcode.
+
+
+|key   | p0 | p1 | p2 | p3 |
+|:----:|:--:|:--:|:--:|:--:|
+|key 0 | a0  | b0  | c0  | d0  |
+|key 1 | a1  | b1  | c1  | d1  |
+
+Shuffle 1 [attribute 1,2]
+
+|key   | p0 | p1 | p2 | p3 |
+|:----:|:--:|:--:|:--:|:--:|
+|key 0 | a0  | b1  | c1  | d0  |
+|key 1 | a1  | b0  | c0  | d1  |
+
+Shuffle 2 [attribute 1,3]
+
+|key   | p0 | p1 | p2 | p3 |
+|:----:|:--:|:--:|:--:|:--:|
+|key 0 | a0  | b1  | c0  | d1  |
+|key 1 | a1  | b0  | c1  | d0  |
+
+interaction:
+
+|what |  ||||||||||
+|--------|--|--|--|--|--|--|--|--|--|--|
+|Passcode| a0|c1|c1|d0|b1|b0|a1|d0|
+|Display 1| 0| 1| 1| 0| 1| 0| 1| 0|
+|Display 2| 0| 0| 0| 0| 0| 1| 1| 0|
+|Display 3| 0| 1| 1| 1| 0| 1| 1| 1|
+
+The possible passcodes after display 1: 
+0{a0,b0,c0,d0},1{a1,b1,c1,d1},1{a1,b1,c1,d1},0{a0,b0,c0,d0},
+1{a1,b1,c1,d1},0{a0,b0,c0,d0},1{a1,b1,c1,d1},0{a0,b0,c0,d0}
+
+The possible passcodes after display 2: 
+0{a0,b1,c1,d0},0{a0,b1,c1,d0},0{a0,b1,c1,d0},0{a0,b1,c1,d0},
+0{a0,b1,c1,d0},1{a1,b0,c0,d1},1{a1,b0,c0,d1},0{a0,b1,c1,d0}
+
+Intersect:
+{a0,d0},{b1,c1},{b1,c1},{a0,d0},{b1,c1},{b0,c0},{a1,d1},{a0,d0}
+
+Passcode is not learned yet.
+
+The possible passcodes after display 3: 
+0{a0,b1,c0,d1},1{a1,b0,c1,d0},1{a1,b0,c1,d0},1{a1,b0,c1,d0},
+0{a0,b1,c0,d1},1{a1,b0,c1,d0},1{a1,b0,c1,d0},1{a1,b0,c1,d0}
+
+Intersect:
+{a0},{c1},{c1},{d0},{b1},{b0},{a1},{d0}
+
+Passcode learned in 3.
+
+
+Here's the case $p = 8$ and an 4 letter passcode.
+
+
+|key   | p0 | p1 | p2 | p3 | p4 | p5 | p6 | p7 |
+|:----:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|key 0 | a0  | b0  | c0  | d0  | e0  | f0  | g0  | h0  |
+|key 1 | a1  | b1  | c1  | d1  | e1  | f1  | g1  | h1  |
+
+Shuffle 1 [attribute 0,2,4,6] [a,c,e,g]
+
+|key   | p0 | p1 | p2 | p3 | p4 | p5 | p6 | p7 |
+|:----:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|key 0 | a1  | b0  | c1  | d0  | e1  | f0  | g1  | h0  |
+|key 1 | a0  | b1  | c0  | d1  | e0  | f1  | g0  | h1  |
+
+Shuffle 2 [attribute 2,3,4,5] [c,d,e,f]
+
+|key   | p0 | p1 | p2 | p3 | p4 | p5 | p6 | p7 |
+|:----:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|key 0 | a0  | b0  | c1  | d1  | e1  | f1  | g0  | h0  |
+|key 1 | a1  | b1  | c0  | d0  | e0  | f0  | g1  | h1  |
+
+Shuffle 3 [attribute 0,4,5,6] [a,e,f,g]
+
+|key   | p0 | p1 | p2 | p3 | p4 | p5 | p6 | p7 |
+|:----:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|key 0 | a1  | b0  | c0  | d0  | e1  | f1  | g1  | h0  |
+|key 1 | a0  | b1  | c1  | d1  | e0  | f0  | g0  | h1  |
+
+
+interaction:
+
+|what |  ||||||||||
+|--------|--|--|--|--|--|--|--|--|--|--|
+|Passcode| a1|c1|b0|h0|f0|e1|a1|d0|
+|Display 1| 1| 1| 0| 0| 0| 1| 1| 0|
+|Display 2| 0| 0| 0| 0| 0| 0| 0| 0|
+|Display 3| 1| 0| 0| 0| 1| 0| 1| 1|
+|Display 4| 0| 1| 0| 0| 1| 0| 0| 0|
+
+The possible passcodes from display 1:  
+`1{a1,b1,c1,d1,e1,f1,g1,h1},`  
+`1{a1,b1,c1,d1,e1,f1,g1,h1},`  
+`0{a0,b0,c0,d0,e0,f0,g0,h0},`  
+`0{a0,b0,c0,d0,e0,f0,g0,h0},`  
+`0{a0,b0,c0,d0,e0,f0,g0,h0},`  
+`1{a1,b1,c1,d1,e1,f1,g1,h1},`  
+`1{a1,b1,c1,d1,e1,f1,g1,h1},`  
+`0{a0,b0,c0,d0,e0,f0,g0,h0}`
+
+The possible passcodes from display 2:  
+`0{a1,b0,c1,d0,e1,f0,g1,h0},`  
+`0{a1,b0,c1,d0,e1,f0,g1,h0},`  
+`0{a1,b0,c1,d0,e1,f0,g1,h0},`  
+`0{a1,b0,c1,d0,e1,f0,g1,h0},`  
+`0{a1,b0,c1,d0,e1,f0,g1,h0},`  
+`0{a1,b0,c1,d0,e1,f0,g1,h0},`  
+`0{a1,b0,c1,d0,e1,f0,g1,h0},`  
+`0{a1,b0,c1,d0,e1,f0,g1,h0}`
+
+Intersect:  
+`1{a1,c1,e1,g1},`  
+`1{a1,c1,e1,g1},`  
+`0{b0,d0,f0,h0},`  
+`0{b0,d0,f0,h0},`  
+`0{b0,d0,f0,h0},`  
+`1{a1,c1,e1,g1},`  
+`1{a1,c1,e1,g1},`  
+`0{b0,d0,f0,h0}`  
+
+Passcode is not learned yet.
+
+Shuffle 2 [attribute 2,3,4,5] [c,d,e,f]
+
+|key   | p0 | p1 | p2 | p3 | p4 | p5 | p6 | p7 |
+|:----:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|key 0 | a0  | b0  | c1  | d1  | e1  | f1  | g0  | h0  |
+|key 1 | a1  | b1  | c0  | d0  | e0  | f0  | g1  | h1  |
+
+So before observing the input for the 3rd attempt:
+Hits for each key from prior information:
+[1001][1001]
+(1/2 are 1's are 1/2 are 0's for every key.)
+
+Now observe the sequence 10001011
+The possible passcodes from display 3:  
+`1{a1,b1,c0,d0,e0,f0,g1,h1},`  
+`0{a0,b0,c1,d1,e1,f1,g0,h0},`  
+`0{a0,b0,c1,d1,e1,f1,g0,h0},`  
+`0{a0,b0,c1,d1,e1,f1,g0,h0},`  
+`1{a1,b1,c0,d0,e0,f0,g1,h1},`  
+`0{a0,b0,c1,d1,e1,f1,g0,h0},`  
+`1{a1,b1,c0,d0,e0,f0,g1,h1},`  
+`1{a1,b1,c0,d0,e0,f0,g1,h1}`  
+
+Intersect with prior information:  
+`1{a1,g1},`  
+`0{c1,e1},`  
+`0{b0,h0},`  
+`0{b0,h0},`  
+`1{d0,f0},`  
+`0{c1,e1},`  
+`1{a1,g1},`  
+`1{d0,f0}`  
+
+Passcode not learned yet, but after one more shuffle, we think we would learn the passcode.
+
+Shuffle 3 [attribute 0,4,5,6] [a,e,f,g]
+
+|key   | p0 | p1 | p2 | p3 | p4 | p5 | p6 | p7 |
+|:----:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|key 0 | a1  | b0  | c0  | d0  | e1  | f1  | g1  | h0  |
+|key 1 | a0  | b1  | c1  | d1  | e0  | f0  | g0  | h1  |
+
+So before observing the input for the 4th attempt:
+Hits for each key from prior information:
+[0][10][0][0][0][10][0][01]
+(So several of the correct keys are identified, only letters in positions 1,5,7 are unknown)
+
+
+The possible passcodes from display 4:   
+`0{a1,b0,c0,d0,e1,f1,g1,h0},`  
+`1{a0,b1,c1,d1,e0,f0,g0,h1},`  
+`0{a1,b0,c0,d0,e1,f1,g1,h0},`  
+`0{a1,b0,c0,d0,e1,f1,g1,h0},`  
+`1{a0,b1,c1,d1,e0,f0,g0,h1},`  
+`0{a1,b0,c0,d0,e1,f1,g1,h0},`  
+`0{a1,b0,c0,d0,e1,f1,g1,h0},`  
+`0{a1,b0,c0,d0,e1,f1,g1,h0},`  
+
+Intersect:  
+`{a1,g1},`  
+`{c1},`  
+`{b0,h0},`  
+`{b0,h0},`  
+`{f0},`  
+`{e1},`  
+`{a1,g1},`  
+`{d0}`  
+
+Passcode only paritally learned after 3 shuffles
+- uncertain about positions 0,2,3,6  = {a1 or g1}, {b0 or h0}
+- certain about positions 1,4,5,7 = c1,f0,e1,d0
+
+Shuffles:  
+[],   
+[attribute 0,2,4,6] [a c e g ]  
+[attribute 2,3,4,5] [  cdef  ]  
+[attribute 0,4,5,6] [a   efg ]  
+1,7 [b,h] - not shuffled 4 times, so the key pressed was always the same for the 3rd and 4th character.
+
+3 -- shuffled 1 time, not shuffled 3 times  
+4 -- shuffled 3 times, not shuffled 1 time  
+2,5,6 -- shuffled 2 times, not shuffled 2 times  
+
+Note that this passcode didn't use the letter g, 
+
+This experiment makes us think of two learning tasks. 
+1) The ability to learn any possible passcode character from observations of inputs
+2) The liklihood of learning a given passcode of a fixed length.
+3) Could you get the correct entry even with partial information?
+4) Probabilistic attack for guessing the correct sequence? 
+    First split shuffle evenly splits things, so you don't gain much. Subsequent shuffles will start to bias toward the correct passcode. The trade-off is that if you don't shuffle a position then the intruder can just use the same input as before and can enter the correct key without knowing the correct icon, but if you do shuffle, then the intruder learns more information.
