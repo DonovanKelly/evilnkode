@@ -1,4 +1,4 @@
-from src.benchmark import passcode_generator
+from src.utils import passcode_generator
 import pytest
 
 @pytest.mark.parametrize(
