@@ -94,7 +94,6 @@ def shuffle_benchmark(
     full_path = Path(file_path) / file_name
     if not overwrite and full_path.exists():
         print(f"file exists {file_path}")
-
         with open(full_path, "r") as fp:
             runs = fp.readline()
             runs = runs.split(',')
