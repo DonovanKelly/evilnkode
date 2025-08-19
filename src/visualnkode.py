@@ -180,20 +180,34 @@ def render_observation_to_png(
     draw.text((x, y), header2, font=header_font, fill=fg_color)
     y += h2_h + section_spacing
 
-    # Draw row boxes
-    for (text, (tw, th), box_h) in zip(row_texts, row_text_sizes, row_box_heights):
+    # Draw row boxes with evenly spaced numbers
+    max_box_width = max(row_box_widths) if row_box_widths else 0
+    for row, box_h in zip(obs.keypad, row_box_heights):
         box_left = x
         box_top = y
-        box_right = x + max(row_box_widths)  # make all boxes same width for neatness
+        box_right = x + max_box_width
         box_bottom = y + box_h
 
-        # rectangle
-        draw.rectangle([box_left, box_top, box_right, box_bottom], fill=row_fill, outline=row_outline, width=2)
+        # draw row rectangle
+        draw.rectangle(
+            [box_left, box_top, box_right, box_bottom],
+            fill=row_fill,
+            outline=row_outline,
+            width=2
+        )
 
-        # text centered vertically, left-padded
-        text_x = box_left + row_padding_xy[0]
-        text_y = box_top + (box_h - th) // 2
-        draw.text((text_x, text_y), text, font=body_font, fill=fg_color)
+        # evenly spaced numbers
+        n = len(row)
+        if n > 0:
+            available_width = max_box_width - 2 * row_padding_xy[0]
+            spacing = available_width / (n + 1)
+
+            for idx, num in enumerate(row, start=1):
+                num_text = str(num)
+                num_w, num_h = _text_size(draw, num_text, body_font)
+                num_x = box_left + row_padding_xy[0] + spacing * idx - num_w / 2
+                num_y = box_top + (box_h - num_h) // 2
+                draw.text((num_x, num_y), num_text, font=body_font, fill=fg_color)
 
         y = box_bottom + row_spacing
 
