@@ -44,5 +44,4 @@ class Evilkode:
                 return EvilOutput(possible_nkodes=[list(el) for el in self.possible_nkode], iterations=idx+1)
             for jdx, props in enumerate(obs.property_list):
                 self.possible_nkode[jdx] = props.intersection(self.possible_nkode[jdx])
-
         raise Exception("error in Evilkode, observations stopped yielding")
