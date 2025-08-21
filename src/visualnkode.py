@@ -32,7 +32,7 @@ def new_observation_sequence(
         properties_per_key=properties_per_key,
         min_complexity=complexity,
         min_disparity=disparity,
-        shuffle_type=ShuffleTypes.FULL_SHUFFLE,
+        shuffle_type=ShuffleTypes.SPLIT_SHUFFLE,
         number_of_observations=numb_runs,
     )
     for obs in obs_gen:
