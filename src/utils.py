@@ -16,6 +16,7 @@ def total_shuffle_states(k: int, p: int) -> int:
 class ShuffleTypes(Enum):
     FULL_SHUFFLE = "FULL_SHUFFLE"
     SPLIT_SHUFFLE = "SPLIT_SHUFFLE"
+    TOWER_SHUFFLE = "TOWER_SHUFFLE"
 
 
 def observations(target_passcode: list[int], number_of_keys:int, properties_per_key: int, min_complexity: int, min_disparity: int, shuffle_type: ShuffleTypes, number_of_observations: int = 100):
@@ -34,6 +35,8 @@ def observations(target_passcode: list[int], number_of_keys:int, properties_per_
                     keypad.full_shuffle()
                 case ShuffleTypes.SPLIT_SHUFFLE:
                     keypad.split_shuffle()
+                case ShuffleTypes.TOWER_SHUFFLE:
+                    keypad.tower_shuffle()
                 case _:
                     raise Exception(f"no shuffle type {shuffle_type}")
 
