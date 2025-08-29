@@ -39,11 +39,17 @@ class Tower:
         self.floors.insert(0, other_discard)
 
     def __str__(self):
-        strVal = ""
+        str_val = ""
+        floor_numb = [i for i in reversed(range(len(self.floors)))]
         for idx, val in enumerate(reversed(self.floors)):
-            strVal += f"Floor {idx}: {val.tolist()}\n"
-        return strVal
+            str_val += f"Floor {floor_numb[idx]}: {val.tolist()}\n"
+        return str_val
 
+    def tolist(self) -> list[int]:
+        tower = []
+        for floor in self.floors:
+            tower.extend(floor.tolist())
+        return tower
 
 @dataclass
 class TowerShuffle:

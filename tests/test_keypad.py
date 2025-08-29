@@ -29,3 +29,11 @@ def test_full_shuffle():
     keypad.full_shuffle()
     print(keypad.keypad)
 
+def test_tower_shuffle():
+    p = 4  # properties_per_key
+    k = 3  # number_of_keys
+    keypad = Keypad.new_keypad(k, p)
+    print()
+    for _ in range(10):
+        print(keypad.keypad)
+        keypad.tower_shuffle()

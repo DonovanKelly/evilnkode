@@ -8,7 +8,7 @@ from typing import Iterable
 
 # Project root = parent of *this* file's directory
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = PROJECT_ROOT / "example" / "obs_json"
+BASE_DIR = PROJECT_ROOT / "example"
 PNG_DIR = PROJECT_ROOT / "example" / "obs_png"
 
 @dataclass
@@ -23,6 +23,7 @@ def new_observation_sequence(
         complexity: int,
         disparity: int,
         numb_runs: int,
+        shuffle_type: ShuffleTypes
 ) -> ObservationSequence:
     passcode = passcode_generator(number_of_keys, properties_per_key, passcode_len, complexity, disparity)
     obs_seq = ObservationSequence(target_passcode=passcode, observations=[])
@@ -32,7 +33,7 @@ def new_observation_sequence(
         properties_per_key=properties_per_key,
         min_complexity=complexity,
         min_disparity=disparity,
-        shuffle_type=ShuffleTypes.SPLIT_SHUFFLE,
+        shuffle_type=shuffle_type,
         number_of_observations=numb_runs,
     )
     for obs in obs_gen:
@@ -50,14 +51,14 @@ def _next_json_filename(base_dir: Path) -> Path:
             return candidate
         counter += 1
 
-def save_observation_sequence_to_json(seq: ObservationSequence, filename: Path | None = None) -> None:
+def save_observation_sequence_to_json(seq: ObservationSequence, shuffle_type: ShuffleTypes, filename: Path | None = None) -> None:
     """
     Save ObservationSequence to JSON.
     - If filename is None, put it under PROJECT_ROOT/output/obs_json/ as observation_{n}.json
     - Creates directory if needed
     """
     if filename is None:
-        base_dir =  OUTPUT_DIR
+        base_dir = BASE_DIR / shuffle_type.name
         base_dir.mkdir(parents=True, exist_ok=True)
         filename = _next_json_filename(base_dir)
     else:
@@ -223,12 +224,12 @@ def _next_run_dir(base_dir: Path) -> Path:
             return run_dir
         counter += 1
 
-def render_sequence_to_pngs(seq: ObservationSequence, out_dir: Path | None = None) -> None:
+def render_sequence_to_pngs(seq: ObservationSequence, shuffle_type: ShuffleTypes, out_dir: Path | None = None) -> None:
     """
     Render each observation to its own PNG inside a fresh run directory.
     Default: PROJECT_ROOT/output/obs_png/run_XXX/observation_001.png
     """
-    base_dir = PNG_DIR if out_dir is None else out_dir
+    base_dir = BASE_DIR / shuffle_type.name / "obs_png"  if out_dir is None else out_dir
     base_dir.mkdir(parents=True, exist_ok=True)
 
     # Create a fresh run dir
@@ -238,6 +239,7 @@ def render_sequence_to_pngs(seq: ObservationSequence, out_dir: Path | None = Non
         filename = run_dir / f"observation_{i:03d}.png"
         render_observation_to_png(seq.target_passcode, obs, filename)
 if __name__ == "__main__":
-    obs_seq = new_observation_sequence(6, 9,4,0,0,numb_runs=50)
-    save_observation_sequence_to_json(obs_seq)
-    render_sequence_to_pngs(obs_seq)
+    shuffle_type = ShuffleTypes.TOWER_SHUFFLE
+    obs_seq = new_observation_sequence(6, 9,4,0,0 ,numb_runs=50, shuffle_type=shuffle_type)
+    save_observation_sequence_to_json(obs_seq, shuffle_type)
+    render_sequence_to_pngs(obs_seq, shuffle_type)

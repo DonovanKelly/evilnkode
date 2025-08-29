@@ -2,12 +2,16 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from src.tower_shuffle import TowerShuffle
+
+
 @dataclass
 class Keypad:
     keypad: np.ndarray
     k: int # number of keys
     p: int  # properties per key
     keypad_cache: list #
+    tower_shuffler: TowerShuffle
     max_cache_size: int = 100
 
     @staticmethod
@@ -17,11 +21,16 @@ class Keypad:
         # Reshape into a 3x4 matrix
         keypad = array.reshape(k, p)
         set_view = keypad.T
-
         for set_idx in set_view:
             np.random.shuffle(set_idx)
 
-        return Keypad(keypad=set_view.T, k=k, p=p, keypad_cache=[])
+        return Keypad(keypad=set_view.T, k=k, p=p, keypad_cache=[], tower_shuffler=TowerShuffle.new(p))
+
+    def tower_shuffle(self):
+        selected_positions = self.tower_shuffler.left_tower.tolist()
+        new_key_idxs = np.random.permutation(self.k)
+        self.keypad[:, selected_positions] = self.keypad[new_key_idxs, :][:, selected_positions]
+        self.tower_shuffler.shuffle()
 
     def split_shuffle(self):
         """
@@ -49,9 +58,9 @@ class Keypad:
     def _shuffle(self) -> np.ndarray:
         column_permutation = np.random.permutation(self.p)
         column_subset = column_permutation[:self.p // 2]
-        perm_indices = np.random.permutation(self.k)
+        new_key_idxs = np.random.permutation(self.k)
         shuffled_sets = self.keypad.copy()
-        shuffled_sets[:, column_subset] = shuffled_sets[perm_indices, :][:, column_subset]
+        shuffled_sets[:, column_subset] = shuffled_sets[new_key_idxs, :][:, column_subset]
         return shuffled_sets
 
     def full_shuffle(self):
