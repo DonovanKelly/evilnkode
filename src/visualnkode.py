@@ -58,7 +58,7 @@ def save_observation_sequence_to_json(seq: ObservationSequence, shuffle_type: Sh
     - Creates directory if needed
     """
     if filename is None:
-        base_dir = BASE_DIR / shuffle_type.name
+        base_dir = BASE_DIR / shuffle_type.name / "obs_json"
         base_dir.mkdir(parents=True, exist_ok=True)
         filename = _next_json_filename(base_dir)
     else:
