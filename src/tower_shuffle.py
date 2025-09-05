@@ -59,7 +59,7 @@ class TowerShuffle:
 
     @classmethod
     def new(cls, total_pos:int):
-        assert total_pos >= 4
+        assert total_pos >= 3
         rand_pos = np.random.permutation(total_pos)
         return TowerShuffle(
             total_positions=total_pos,
