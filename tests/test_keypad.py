@@ -1,6 +1,8 @@
 import numpy as np
 
 from src.keypad import Keypad
+from src.tower_shuffle import TowerShuffle
+
 
 def test_keypad():
     keypad = Keypad(
@@ -8,7 +10,7 @@ def test_keypad():
             [8, 9, 10, 11],
             [0, 5, 2, 3],
             [4, 1, 6,7]
-        ]), k= 3, p=4, keypad_cache=[])
+        ]), k= 3, p=4, keypad_cache=[], tower_shuffler=TowerShuffle.new(3*4))
 
     assert keypad.key_entry([8, 5, 6, 11]) == [0,1,2,0]
 

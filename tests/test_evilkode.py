@@ -42,4 +42,4 @@ def test_evilkode(number_of_keys, properties_per_key, passcode_len, observations
     )
 
     evilout = evilkode.run()
-    assert evilout.iterations > 1
+    assert evilout.iterations_to_break > 1
