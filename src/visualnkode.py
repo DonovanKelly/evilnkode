@@ -1,46 +1,39 @@
 import json
+from typing import Iterable
 from dataclasses import dataclass, asdict
-from evilkode import Observation
-from utils import observations, passcode_generator, ShuffleTypes
+from evilnkode import Observation
+from utils import observations, passcode_generator
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-from typing import Iterable
+from src.keypad.keypad import BaseKeypad, SlidingTowerShuffleKeypad
 
 # Project root = parent of *this* file's directory
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BASE_DIR = PROJECT_ROOT / "example"
-PNG_DIR = PROJECT_ROOT / "example" / "obs_png"
+BASE_DIR = PROJECT_ROOT / "output"
+PNG_DIR = PROJECT_ROOT / "output" / "obs_png"
+
 
 @dataclass
 class ObservationSequence:
     target_passcode: list[int]
     observations: list[Observation]
 
+
 def new_observation_sequence(
-        number_of_keys: int,
-        properties_per_key: int,
+        keypad: BaseKeypad,
         passcode_len: int,
         complexity: int,
         disparity: int,
         numb_runs: int,
-        shuffle_type: ShuffleTypes
 ) -> ObservationSequence:
-    passcode = passcode_generator(number_of_keys, properties_per_key, passcode_len, complexity, disparity)
-    obs_seq = ObservationSequence(target_passcode=passcode, observations=[])
+    passcode = passcode_generator(keypad.k, keypad.p, passcode_len, complexity, disparity)
     obs_gen = observations(
+        keypad=keypad,
         target_passcode=passcode,
-        number_of_keys=number_of_keys,
-        properties_per_key=properties_per_key,
-        min_complexity=complexity,
-        min_disparity=disparity,
-        shuffle_type=shuffle_type,
         number_of_observations=numb_runs,
     )
-    for obs in obs_gen:
-        obs.keypad = obs.keypad.tolist()
-        obs_seq.observations.append(obs)
+    return ObservationSequence(target_passcode=passcode, observations=[obs for obs in obs_gen])
 
-    return obs_seq
 
 def _next_json_filename(base_dir: Path) -> Path:
     """Find the next available observation_X.json file in base_dir."""
@@ -51,14 +44,17 @@ def _next_json_filename(base_dir: Path) -> Path:
             return candidate
         counter += 1
 
-def save_observation_sequence_to_json(seq: ObservationSequence, shuffle_type: ShuffleTypes, filename: Path | None = None) -> None:
+
+def save_observation_sequence_to_json(seq: ObservationSequence,
+                                      shuffle_name: str,
+                                      filename: Path | None = None) -> None:
     """
     Save ObservationSequence to JSON.
     - If filename is None, put it under PROJECT_ROOT/output/obs_json/ as observation_{n}.json
     - Creates directory if needed
     """
     if filename is None:
-        base_dir = BASE_DIR / shuffle_type.name / "obs_json"
+        base_dir = BASE_DIR / shuffle_name / "obs_json"
         base_dir.mkdir(parents=True, exist_ok=True)
         filename = _next_json_filename(base_dir)
     else:
@@ -67,14 +63,15 @@ def save_observation_sequence_to_json(seq: ObservationSequence, shuffle_type: Sh
     with filename.open("w", encoding="utf-8") as f:
         json.dump(asdict(seq), f, indent=4)
 
+
 # ---------- Helpers ----------
 def _load_font(preferred: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Try a preferred TTF, fall back to common monospace, then PIL default."""
     candidates = [
         preferred,
-        "DejaVuSansMono.ttf",       # common on Linux
-        "Consolas.ttf",             # Windows
-        "Menlo.ttc", "Menlo.ttf",   # macOS
+        "DejaVuSansMono.ttf",  # common on Linux
+        "Consolas.ttf",  # Windows
+        "Menlo.ttc", "Menlo.ttf",  # macOS
         "Courier New.ttf",
     ]
     for c in candidates:
@@ -84,13 +81,16 @@ def _load_font(preferred: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.
             continue
     return ImageFont.load_default()
 
+
 def _text_size(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.ImageFont) -> tuple[int, int]:
     """Get (w, h) using font bbox for accurate layout."""
     left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-    return right - left, bottom - top
+    return int(right - left), int(bottom - top)
+
 
 def _join_nums(nums: Iterable[int]) -> str:
     return " ".join(str(n) for n in nums)
+
 
 def _next_available_path(path: Path) -> Path:
     """If path exists, append _1, _2, ..."""
@@ -104,25 +104,26 @@ def _next_available_path(path: Path) -> Path:
             return candidate
         i += 1
 
+
 # ---------- Core rendering ----------
 def render_observation_to_png(
-    target_passcode: list[int],
-    obs: Observation,
-    out_path: Path,
-    *,
-    header_font_name: str = "DejaVuSans.ttf",
-    body_font_name: str = "DejaVuSans.ttf",
-    header_size: int = 28,
-    body_size: int = 24,
-    margin: int = 32,
-    row_padding_xy: tuple[int, int] = (16, 12),   # (x, y) padding inside row box
-    row_spacing: int = 14,
-    header_spacing: int = 10,
-    section_spacing: int = 18,
-    bg_color: str = "white",
-    fg_color: str = "black",
-    row_fill: str = "#f7f7f7",
-    row_outline: str = "#222222",
+        target_passcode: list[int],
+        obs: Observation,
+        out_path: Path,
+        *,
+        header_font_name: str = "DejaVuSans.ttf",
+        body_font_name: str = "DejaVuSans.ttf",
+        header_size: int = 28,
+        body_size: int = 24,
+        margin: int = 32,
+        row_padding_xy: tuple[int, int] = (16, 12),  # (x, y) padding inside row box
+        row_spacing: int = 14,
+        header_spacing: int = 10,
+        section_spacing: int = 18,
+        bg_color: str = "white",
+        fg_color: str = "black",
+        row_fill: str = "#f7f7f7",
+        row_outline: str = "#222222",
 ):
     """
     Render a single observation:
@@ -160,13 +161,13 @@ def render_observation_to_png(
 
     width = content_width + 2 * margin
     height = (
-        margin
-        + h1_h
-        + header_spacing
-        + h2_h
-        + section_spacing
-        + total_rows_height
-        + margin
+            margin
+            + h1_h
+            + header_spacing
+            + h2_h
+            + section_spacing
+            + total_rows_height
+            + margin
     )
 
     # Create final image
@@ -214,6 +215,7 @@ def render_observation_to_png(
 
     img.save(out_path, format="PNG")
 
+
 def _next_run_dir(base_dir: Path) -> Path:
     """Find the next available run directory under base_dir (run_001, run_002, ...)."""
     counter = 1
@@ -224,12 +226,13 @@ def _next_run_dir(base_dir: Path) -> Path:
             return run_dir
         counter += 1
 
-def render_sequence_to_pngs(seq: ObservationSequence, shuffle_type: ShuffleTypes, out_dir: Path | None = None) -> None:
+
+def render_sequence_to_pngs(seq: ObservationSequence, shuffle_name: str, out_dir: Path | None = None) -> None:
     """
     Render each observation to its own PNG inside a fresh run directory.
     Default: PROJECT_ROOT/output/obs_png/run_XXX/observation_001.png
     """
-    base_dir = BASE_DIR / shuffle_type.name / "obs_png"  if out_dir is None else out_dir
+    base_dir = BASE_DIR / shuffle_name / "obs_png" if out_dir is None else out_dir
     base_dir.mkdir(parents=True, exist_ok=True)
 
     # Create a fresh run dir
@@ -238,8 +241,11 @@ def render_sequence_to_pngs(seq: ObservationSequence, shuffle_type: ShuffleTypes
     for i, obs in enumerate(seq.observations, start=1):
         filename = run_dir / f"observation_{i:03d}.png"
         render_observation_to_png(seq.target_passcode, obs, filename)
+
+
 if __name__ == "__main__":
-    shuffle_type = ShuffleTypes.TOWER_SHUFFLE
-    obs_seq = new_observation_sequence(6, 9,4,0,0 ,numb_runs=50, shuffle_type=shuffle_type)
-    save_observation_sequence_to_json(obs_seq, shuffle_type)
-    render_sequence_to_pngs(obs_seq, shuffle_type)
+    shuffle_name = "tower_shuffle"
+    keypad = SlidingTowerShuffleKeypad.new_keypad(6, 9)
+    obs_seq = new_observation_sequence(keypad, 4, 0, 0, numb_runs=50)
+    save_observation_sequence_to_json(obs_seq, shuffle_name)
+    render_sequence_to_pngs(obs_seq, shuffle_name)

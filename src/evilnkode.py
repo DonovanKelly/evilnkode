@@ -19,24 +19,18 @@ class Observation:
 
 @dataclass
 class EvilOutput:
-    # possible_nkodes: list[list[int]]
     iterations_to_break: int
     iterations_to_replay: int
 
-    # @property
-    # def number_of_possible_nkode(self):
-    #     return math.prod([len(el) for el in self.possible_nkodes])
-
 
 @dataclass
-class Evilkode:
+class EvilNKode:
     observations: Iterator[Observation]
     passcode_len: int
     number_of_keys: int
     properties_per_key: int
     max_tries_before_lockout: int = 5
     possible_nkode = None
-
 
     def initialize(self):
         possible_values = set(range(self.number_of_keys * self.properties_per_key))
@@ -49,9 +43,9 @@ class Evilkode:
             if iterations_to_replay is None:
                 replay_possibilities = self.replay_attack(obs)
                 if replay_possibilities <= self.max_tries_before_lockout:
-                   iterations_to_replay =  idx + 1
+                    iterations_to_replay = idx + 1
             if math.prod([len(el) for el in self.possible_nkode]) <= self.max_tries_before_lockout:
-                assert iterations_to_replay <= idx +1
+                assert iterations_to_replay <= idx + 1
                 return EvilOutput(
                     # possible_nkodes=[list(el) for el in self.possible_nkode],
                     iterations_to_break=idx + 1,

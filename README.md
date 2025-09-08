@@ -33,4 +33,4 @@ jupyter lab
 ```
 
 ## Notebooks
-- [evilnkode](notebooks/evilkode.ipynb)
+- [evilnkode](notebooks/evilnkode.ipynb)
