@@ -1,4 +1,4 @@
-from src.tower_shuffle import TowerShuffle
+from src.keypad.tower_shuffle import TowerShuffle
 
 def test_tower_shuffle():
     tower = TowerShuffle.new(9)
