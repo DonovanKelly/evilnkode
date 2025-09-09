@@ -1,16 +1,18 @@
 import json
 from typing import Iterable
 from dataclasses import dataclass, asdict
-from evilnkode import Observation
-from utils import observations, passcode_generator
+from src.evilnkode import Observation
+from src.utils import observations, passcode_generator
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-from src.keypad.keypad import BaseKeypad, SlidingTowerShuffleKeypad
-
-# Project root = parent of *this* file's directory
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-BASE_DIR = PROJECT_ROOT / "output"
-PNG_DIR = PROJECT_ROOT / "output" / "obs_png"
+from src.keypad.keypad import (
+    BaseKeypad,
+    SlidingSplitShuffleKeypad,
+    SlidingTowerShuffleKeypad,
+    RandomShuffleKeypad,
+    RandomSplitShuffleKeypad,
+)
+import argparse
 
 
 @dataclass
@@ -46,19 +48,8 @@ def _next_json_filename(base_dir: Path) -> Path:
 
 
 def save_observation_sequence_to_json(seq: ObservationSequence,
-                                      shuffle_name: str,
-                                      filename: Path | None = None) -> None:
-    """
-    Save ObservationSequence to JSON.
-    - If filename is None, put it under PROJECT_ROOT/output/obs_json/ as observation_{n}.json
-    - Creates directory if needed
-    """
-    if filename is None:
-        base_dir = BASE_DIR / shuffle_name / "obs_json"
-        base_dir.mkdir(parents=True, exist_ok=True)
-        filename = _next_json_filename(base_dir)
-    else:
-        filename.parent.mkdir(parents=True, exist_ok=True)
+                                      filename: Path) -> None:
+    filename.parent.mkdir(parents=True, exist_ok=True)
 
     with filename.open("w", encoding="utf-8") as f:
         json.dump(asdict(seq), f, indent=4)
@@ -227,25 +218,36 @@ def _next_run_dir(base_dir: Path) -> Path:
         counter += 1
 
 
-def render_sequence_to_pngs(seq: ObservationSequence, shuffle_name: str, out_dir: Path | None = None) -> None:
-    """
-    Render each observation to its own PNG inside a fresh run directory.
-    Default: PROJECT_ROOT/output/obs_png/run_XXX/observation_001.png
-    """
-    base_dir = BASE_DIR / shuffle_name / "obs_png" if out_dir is None else out_dir
-    base_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create a fresh run dir
-    run_dir = _next_run_dir(base_dir)
-
+def render_sequence_to_pngs(seq: ObservationSequence, out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    run_dir = _next_run_dir(out_dir)
     for i, obs in enumerate(seq.observations, start=1):
         filename = run_dir / f"observation_{i:03d}.png"
         render_observation_to_png(seq.target_passcode, obs, filename)
 
 
 if __name__ == "__main__":
-    shuffle_name = "tower_shuffle"
-    keypad = SlidingTowerShuffleKeypad.new_keypad(6, 9)
+    shuffle_classes = {
+        'RandomSplitShuffle': RandomSplitShuffleKeypad,
+        'RandomShuffle': RandomShuffleKeypad,
+        'SlidingSplitShuffle': SlidingSplitShuffleKeypad,
+        'SlidingTowerShuffle': SlidingTowerShuffleKeypad
+    }
+    parser = argparse.ArgumentParser(description="Generate and save observation sequences with optional PNG rendering.")
+    parser.add_argument("--number-of-keys", type=int, default=6, help="Number of keys in the keypad (default: 6)")
+    parser.add_argument("--properties-per-key", type=int, default=9, help="Properties per key (default: 9)")
+    parser.add_argument("--passcode-length", type=int, default=4, help="Length of the passcode (default: 4)")
+    parser.add_argument("--complexity", type=int, default=0, help="Complexity of the passcode (default: 0)")
+    parser.add_argument("--disparity", type=int, default=0, help="Disparity of the passcode (default: 0)")
+    parser.add_argument("--num-runs", type=int, default=50, help="Number of observations to generate (default: 50)")
+    parser.add_argument("--shuffle-type", type=str, default="SlidingTowerShuffle", choices=list(shuffle_classes.keys()),
+                        help="Keypad shuffle type: 'RandomShuffle' or 'SlidingTowerShuffle' (default: SlidingTowerShuffle)")
+    parser.add_argument("--output-dir", type=str, default="./output",
+                        help="Custom output directory for JSON and PNG files")
+    args = parser.parse_args()
+    keypad = shuffle_classes[args.shuffle_type].new_keypad(6, 9)
     obs_seq = new_observation_sequence(keypad, 4, 0, 0, numb_runs=50)
-    save_observation_sequence_to_json(obs_seq, shuffle_name)
-    render_sequence_to_pngs(obs_seq, shuffle_name)
+    shuffle_type = str(type(keypad)).lower().split('.')[-1].replace("'>", "")
+    output_dir = Path(args.output_dir)
+    save_observation_sequence_to_json(obs_seq, output_dir / "obs.json")
+    render_sequence_to_pngs(obs_seq, output_dir / "obs_png")
