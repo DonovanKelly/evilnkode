@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
+
 @dataclass
 class Tower:
     floors: list[np.ndarray]
@@ -10,7 +11,7 @@ class Tower:
         keep = np.array([], dtype=int)
         balance = self.balance()
         for idx, floor in enumerate(self.floors):
-            div = len(floor)//2 + balance[idx]
+            div = len(floor) // 2 + balance[idx]
             floor_shuffle = np.random.permutation(len(floor))
             keep = np.concatenate((keep, floor[floor_shuffle[:div]]))
             discard = np.concatenate((discard, floor[floor_shuffle[div:]]))
@@ -27,7 +28,6 @@ class Tower:
         odd_floors = odd_floors[shuffle]
         balance[odd_floors] = 1
         return balance.tolist()
-
 
     def update_tower(self, keep: np.ndarray, other_discard: np.ndarray):
         new_floors = []
@@ -51,20 +51,22 @@ class Tower:
             tower.extend(floor.tolist())
         return tower
 
+
 @dataclass
 class TowerShuffle:
+    # TODO: I don't think total_positions is used anywhere
     total_positions: int
     left_tower: Tower
     right_tower: Tower
 
     @classmethod
-    def new(cls, total_pos:int):
+    def new(cls, total_pos: int):
         assert total_pos >= 3
         rand_pos = np.random.permutation(total_pos)
         return TowerShuffle(
             total_positions=total_pos,
-            left_tower=Tower(floors=[rand_pos[:total_pos//2]]),
-            right_tower=Tower(floors=[rand_pos[total_pos//2:]]),
+            left_tower=Tower(floors=[rand_pos[:total_pos // 2]]),
+            right_tower=Tower(floors=[rand_pos[total_pos // 2:]]),
         )
 
     def shuffle(self):
