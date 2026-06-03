@@ -44,15 +44,16 @@ class EvilNKode:
                 replay_possibilities = self.replay_attack(obs)
                 if replay_possibilities <= self.max_tries_before_lockout:
                     iterations_to_replay = idx + 1
+            for jdx, props in enumerate(obs.property_list):
+                self.possible_nkode[jdx] = props.intersection(self.possible_nkode[jdx])
             if math.prod([len(el) for el in self.possible_nkode]) <= self.max_tries_before_lockout:
-                assert iterations_to_replay <= idx + 1
+                if iterations_to_replay is None:
+                    # A full break trivially enables replay (exact properties known).
+                    iterations_to_replay = idx + 1
                 return EvilOutput(
-                    # possible_nkodes=[list(el) for el in self.possible_nkode],
                     iterations_to_break=idx + 1,
                     iterations_to_replay=iterations_to_replay
                 )
-            for jdx, props in enumerate(obs.property_list):
-                self.possible_nkode[jdx] = props.intersection(self.possible_nkode[jdx])
         raise Exception("error in Evilkode, observations stopped yielding")
 
     def replay_attack(self, obs: Observation) -> int:
