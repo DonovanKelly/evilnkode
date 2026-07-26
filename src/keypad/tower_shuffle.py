@@ -15,7 +15,7 @@ class Tower:
             keep = np.concatenate((keep, floor[floor_shuffle[:div]]))
             discard = np.concatenate((discard, floor[floor_shuffle[div:]]))
         diff = len(discard) - len(keep)
-        assert 0 <= diff <= 1
+        assert abs(diff) <= 1
         return keep, discard
 
     def balance(self) -> list[int]:
@@ -32,11 +32,11 @@ class Tower:
     def update_tower(self, keep: np.ndarray, other_discard: np.ndarray):
         new_floors = []
         for floor in self.floors:
-            new_floor = np.intersect1d(floor, keep)
+            new_floor = floor[np.isin(floor, keep)]
             if len(new_floor):
                 new_floors.append(new_floor)
         self.floors = new_floors
-        self.floors.insert(0, other_discard)
+        self.floors.append(other_discard)
 
     def __str__(self):
         str_val = ""
@@ -53,7 +53,6 @@ class Tower:
 
 @dataclass
 class TowerShuffle:
-    total_positions: int
     left_tower: Tower
     right_tower: Tower
 
@@ -61,8 +60,7 @@ class TowerShuffle:
     def new(cls, total_pos:int):
         assert total_pos >= 3
         rand_pos = np.random.permutation(total_pos)
-        return TowerShuffle(
-            total_positions=total_pos,
+        return cls(
             left_tower=Tower(floors=[rand_pos[:total_pos//2]]),
             right_tower=Tower(floors=[rand_pos[total_pos//2:]]),
         )

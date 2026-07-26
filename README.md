@@ -57,8 +57,8 @@ python -m cli.benchmark_histogram
 - This command runs the `benchmark_histogram` module, which may generate output such as benchmark results or histograms. For example, it might produce output like:
   ```
   File exists: output/slidingtowershufflekeypad-6-8-4-5-4-4-10000/benchmark/slidingtowershufflekeypad-6-8-4-5-4-4-10000.pkl
-  Bench SlidingTowerShuffle Break 5
-  Bench SlidingTowerShuffle Replay 5
+  Bench SlidingTowerShuffle Break 4
+  Bench SlidingTowerShuffle Replay 4
   ```
 - To view available options and arguments, use the `-help` flag:
   ```bash
