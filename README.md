@@ -33,6 +33,10 @@ Once activated, your terminal prompt should change to include `(evilnkode)`, ind
 The project includes CLI scripts for visualizing nKode observations, benchmarking
 shuffle strategies, and comparing challenge-subset attacks.
 
+For a plain-language explanation and correctness audit of the tower shuffle,
+the current four-icon flow, and the proposed 3-of-6 experiment, see
+[`docs/tower-shuffle-and-challenge-subsets.md`](docs/tower-shuffle-and-challenge-subsets.md).
+
 ### Running `cli.visualnkode`
 
 To execute the `visualnkode` CLI script:
