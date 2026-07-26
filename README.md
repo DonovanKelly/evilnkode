@@ -30,7 +30,8 @@ Once activated, your terminal prompt should change to include `(evilnkode)`, ind
 
 ## Running CLI Scripts
 
-The project includes two main CLI scripts: `cli.visualnkode` and `cli.benchmark_histogram`. Below are instructions to run each.
+The project includes CLI scripts for visualizing nKode observations, benchmarking
+shuffle strategies, and comparing challenge-subset attacks.
 
 ### Running `cli.visualnkode`
 
@@ -64,6 +65,37 @@ python -m cli.benchmark_histogram
   ```bash
   python -m cli.benchmark_histogram -help
   ```
+
+### Comparing 3-of-6 challenge subsets
+
+To compare `RandomShuffleKeypad` with the production-style tower shuffle:
+
+```bash
+python -m cli.challenge_subset_benchmark
+```
+
+The default experiment runs 10,000 paired trials on a 6-key × 9-icon layout.
+Each login selects three distinct positions from a six-icon secret and presents
+them in ascending order. The attacker receives three guesses before lockout.
+
+Results are written beneath `output/challenge-subset/` and include:
+
+- a Markdown report;
+- JSON and CSV data;
+- crack and guaranteed-replay distributions;
+- an optimal three-try next-login success curve.
+
+Use a smaller run while iterating:
+
+```bash
+python -m cli.challenge_subset_benchmark --run-count 100 --overwrite
+```
+
+View all configuration options with:
+
+```bash
+python -m cli.challenge_subset_benchmark --help
+```
 
 ## Using the `-help` Flag
 

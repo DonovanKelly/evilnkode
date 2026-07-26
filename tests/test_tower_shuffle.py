@@ -23,3 +23,14 @@ def test_tower_shuffle():
     for _ in range(100):
         tower.shuffle()
         print(tower)
+
+
+def test_seeded_tower_state_is_reproducible():
+    first = TowerShuffle.new(9, rng=np.random.default_rng(456))
+    second = TowerShuffle.new(9, rng=np.random.default_rng(456))
+
+    for _ in range(10):
+        assert first.left_tower.tolist() == second.left_tower.tolist()
+        assert first.right_tower.tolist() == second.right_tower.tolist()
+        first.shuffle()
+        second.shuffle()

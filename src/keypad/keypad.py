@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 from src.keypad.tower_shuffle import TowerShuffle
 from abc import ABC, abstractmethod
@@ -11,8 +11,12 @@ class BaseKeypad(ABC):
     p: int  # properties per key
 
     @classmethod
-    def _build_keypad(cls, k: int, p: int) -> np.ndarray:
-        rng = np.random.default_rng()
+    def _build_keypad(
+        cls,
+        k: int,
+        p: int,
+        rng: np.random.Generator,
+    ) -> np.ndarray:
         total = k * p
         array = np.arange(total)
         keypad = array.reshape(k, p)
@@ -23,7 +27,12 @@ class BaseKeypad(ABC):
 
     @classmethod
     @abstractmethod
-    def new_keypad(cls, k: int, p: int) -> Self:
+    def new_keypad(
+        cls,
+        k: int,
+        p: int,
+        rng: np.random.Generator | None = None,
+    ) -> Self:
         raise NotImplementedError
 
     def key_entry(self, target_passcode: list[int]) -> list[int]:
@@ -50,15 +59,33 @@ class SlidingTowerShuffleKeypad(BaseKeypad):
     k: int  # number of keys
     p: int  # properties per key
     tower_shuffle: TowerShuffle
+    rng: np.random.Generator = field(
+        default_factory=np.random.default_rng,
+        repr=False,
+        compare=False,
+    )
 
     @classmethod
-    def new_keypad(cls, k: int, p: int) -> Self:
-        kp = cls._build_keypad(k, p)
-        return cls(keypad=kp, k=k, p=p, tower_shuffle=TowerShuffle.new(p))
+    def new_keypad(
+        cls,
+        k: int,
+        p: int,
+        rng: np.random.Generator | None = None,
+    ) -> Self:
+        if rng is None:
+            rng = np.random.default_rng()
+        kp = cls._build_keypad(k, p, rng)
+        return cls(
+            keypad=kp,
+            k=k,
+            p=p,
+            tower_shuffle=TowerShuffle.new(p, rng),
+            rng=rng,
+        )
 
     def shuffle(self):
         selected_positions = self.tower_shuffle.left_tower.tolist()
-        shifts = np.random.permutation(np.arange(1, self.k))[:2]
+        shifts = self.rng.permutation(np.arange(1, self.k))[:2]
         set_view = self.keypad.T.copy()
         for idx, icon_set in enumerate(set_view):
             shift = shifts[0] if idx in selected_positions else shifts[1]
@@ -72,14 +99,29 @@ class RandomShuffleKeypad(BaseKeypad):
     keypad: np.ndarray
     k: int  # number of keys
     p: int  # properties per key
+    rng: np.random.Generator = field(
+        default_factory=np.random.default_rng,
+        repr=False,
+        compare=False,
+    )
 
     @classmethod
-    def new_keypad(cls, k: int, p: int) -> Self:
-        kp = cls._build_keypad(k, p)
-        return cls(keypad=kp, k=k, p=p)
+    def new_keypad(
+        cls,
+        k: int,
+        p: int,
+        rng: np.random.Generator | None = None,
+    ) -> Self:
+        if rng is None:
+            rng = np.random.default_rng()
+        kp = cls._build_keypad(k, p, rng)
+        return cls(keypad=kp, k=k, p=p, rng=rng)
 
     def shuffle(self):
-        shuffled_matrix = np.array([np.random.permutation(row) for row in self.keypad.T])
+        shuffled_matrix = np.array([
+            self.rng.permutation(row)
+            for row in self.keypad.T
+        ])
         self.keypad = shuffled_matrix.T
 
 
@@ -88,18 +130,32 @@ class RandomSplitShuffleKeypad(BaseKeypad):
     keypad: np.ndarray
     k: int  # number of keys
     p: int  # properties per key
+    rng: np.random.Generator = field(
+        default_factory=np.random.default_rng,
+        repr=False,
+        compare=False,
+    )
 
     @classmethod
-    def new_keypad(cls, k: int, p: int) -> Self:
-        kp = cls._build_keypad(k, p)
-        return cls(keypad=kp, k=k, p=p)
+    def new_keypad(
+        cls,
+        k: int,
+        p: int,
+        rng: np.random.Generator | None = None,
+    ) -> Self:
+        if rng is None:
+            rng = np.random.default_rng()
+        kp = cls._build_keypad(k, p, rng)
+        return cls(keypad=kp, k=k, p=p, rng=rng)
 
     def shuffle(self):
-        column_permutation = np.random.permutation(self.p)
+        column_permutation = self.rng.permutation(self.p)
         column_subset = column_permutation[:self.p // 2]
-        new_key_idxs = np.random.permutation(self.k)
+        new_key_idxs = self.rng.permutation(self.k)
         shuffled_sets = self.keypad.copy()
-        shuffled_sets[:, column_subset] = shuffled_sets[new_key_idxs, :][:, column_subset]
+        shuffled_sets[:, column_subset] = shuffled_sets[
+            new_key_idxs, :
+        ][:, column_subset]
         self.keypad = shuffled_sets
 
 
@@ -108,17 +164,31 @@ class SlidingSplitShuffleKeypad(BaseKeypad):
     keypad: np.ndarray
     k: int  # number of keys
     p: int  # properties per key
+    rng: np.random.Generator = field(
+        default_factory=np.random.default_rng,
+        repr=False,
+        compare=False,
+    )
 
     @classmethod
-    def new_keypad(cls, k: int, p: int) -> Self:
-        kp = cls._build_keypad(k, p)
-        return cls(keypad=kp, k=k, p=p)
+    def new_keypad(
+        cls,
+        k: int,
+        p: int,
+        rng: np.random.Generator | None = None,
+    ) -> Self:
+        if rng is None:
+            rng = np.random.default_rng()
+        kp = cls._build_keypad(k, p, rng)
+        return cls(keypad=kp, k=k, p=p, rng=rng)
 
     def shuffle(self):
-        selected_positions = np.random.permutation(self.p)
+        selected_positions = self.rng.permutation(self.p)
         column_subset = selected_positions[:self.p // 2]
-        shift = np.random.randint(1, self.k)
+        shift = self.rng.integers(1, self.k)
         new_key_idxs = np.roll(np.arange(self.k), shift)
         shuffled_sets = self.keypad.copy()
-        shuffled_sets[:, column_subset] = shuffled_sets[new_key_idxs, :][:, column_subset]
+        shuffled_sets[:, column_subset] = shuffled_sets[
+            new_key_idxs, :
+        ][:, column_subset]
         self.keypad = shuffled_sets
