@@ -58,11 +58,12 @@ class SlidingTowerShuffleKeypad(BaseKeypad):
 
     def shuffle(self):
         selected_positions = self.tower_shuffle.left_tower.tolist()
-        shift = np.random.randint(1, self.k)  # random int in [1, k-1]
-        new_key_idxs = np.roll(np.arange(self.k), shift)
-        shuffled_sets = self.keypad.copy()
-        shuffled_sets[:, selected_positions] = shuffled_sets[new_key_idxs, :][:, selected_positions]
-        self.keypad = shuffled_sets
+        shifts = np.random.permutation(np.arange(1, self.k))[:2]
+        set_view = self.keypad.T.copy()
+        for idx, icon_set in enumerate(set_view):
+            shift = shifts[0] if idx in selected_positions else shifts[1]
+            set_view[idx] = np.roll(icon_set, shift)
+        self.keypad = set_view.T
         self.tower_shuffle.shuffle()
 
 
