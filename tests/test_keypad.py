@@ -49,6 +49,36 @@ def test_sliding_tower_shuffle_matches_nkode_rotations():
 
 
 @pytest.mark.parametrize(
+    "keypad_type",
+    [
+        RandomShuffleKeypad,
+        RandomSplitShuffleKeypad,
+        SlidingTowerShuffleKeypad,
+        SlidingSplitShuffleKeypad,
+    ],
+)
+def test_seeded_keypads_are_reproducible(keypad_type):
+    first = keypad_type.new_keypad(
+        k=6,
+        p=9,
+        rng=np.random.default_rng(123),
+    )
+    second = keypad_type.new_keypad(
+        k=6,
+        p=9,
+        rng=np.random.default_rng(123),
+    )
+    expected_icons = list(range(54))
+
+    for _ in range(5):
+        assert np.array_equal(first.keypad, second.keypad)
+        assert sorted(first.keypad.flatten()) == expected_icons
+        first.shuffle()
+        second.shuffle()
+    assert sorted(first.keypad.flatten()) == expected_icons
+
+
+@pytest.mark.parametrize(
     "keypad_type, number_of_keys, properties_per_key",
     [
         (RandomShuffleKeypad, 3, 4),
