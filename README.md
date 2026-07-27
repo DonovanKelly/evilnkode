@@ -72,15 +72,19 @@ python -m cli.benchmark_histogram
 
 ### Comparing 3-of-6 challenge subsets
 
-To compare `RandomShuffleKeypad` with the production-style tower shuffle:
+To compare uniform subset selection with the alternating
+`{1,2,3}`/`{4,5,6}` schedule under the selective tower shuffle:
 
 ```bash
 python -m cli.challenge_subset_benchmark
 ```
 
-The default experiment runs 10,000 paired trials on a 6-key × 9-icon layout.
-Each login selects three distinct positions from a six-icon secret and presents
-them in ascending order. The attacker receives three guesses before lockout.
+The default experiment runs 10,000 paired trials on a 6-key × 8-icon layout.
+After every successful observation, it shuffles the distinct pressed keys plus
+one random unpressed key. The attacker receives three guesses before lockout.
+
+The algorithm and its security hypotheses are documented in
+[`docs/selective-key-rotation-and-challenge-schedules.md`](docs/selective-key-rotation-and-challenge-schedules.md).
 
 Results are written beneath `output/challenge-subset/` and include:
 
@@ -93,6 +97,15 @@ Use a smaller run while iterating:
 
 ```bash
 python -m cli.challenge_subset_benchmark --run-count 100 --overwrite
+```
+
+Run only one challenge schedule with:
+
+```bash
+python -m cli.challenge_subset_benchmark \
+  --challenge-schedule alternating-halves \
+  --run-count 100 \
+  --overwrite
 ```
 
 View all configuration options with:

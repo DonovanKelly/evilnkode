@@ -14,9 +14,10 @@ the keys that were pressed plus one additional key. It retains the existing
 column-tower algorithm, including its floor history, while avoiding whole-key
 swaps.
 
-This is a design and benchmark specification. It does not select a production
-schedule, change the current Python benchmark, or define a production
-authentication protocol.
+This document describes the experiment implemented by
+`src.challenge_subset`, `src.challenge_schedule`, `src.challenge_protocol`,
+and `SelectiveTowerShuffleKeypad`. It does not select a production schedule
+or define a production authentication protocol.
 
 ## Vocabulary and fixed parameters
 
@@ -40,8 +41,8 @@ secret positions     = 6
 challenged positions = 3
 ```
 
-Secret positions are numbered `1…6` in this document. A future Python
-implementation will represent them as `0…5`.
+Secret positions are numbered `1…6` in this document. The Python implementation
+represents them as `0…5`.
 
 ## Starting keypad
 
@@ -400,10 +401,9 @@ The proposed benchmark should test rather than assume the following:
 - Adding one unpressed key prevents the one-key case from degenerating into no
   movement.
 
-## Future benchmark
+## Benchmark implementation
 
-The first implementation should compare two cohorts using the same selective
-shuffle:
+The benchmark compares two cohorts using the same selective shuffle:
 
 | Challenge schedule | Selection rule |
 |---|---|
@@ -433,7 +433,7 @@ production recommendation.
 
 ## Experiment invariants
 
-A future implementation must verify:
+The automated tests verify:
 
 - every challenge contains three distinct, sorted positions from `1…6`;
 - uniform selection can produce all 20 subsets;

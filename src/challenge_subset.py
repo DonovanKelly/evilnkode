@@ -8,22 +8,30 @@ from typing import Callable
 
 import numpy as np
 
+from src.challenge_schedule import (
+    ALTERNATING_HALVES,
+    CHALLENGE_SCHEDULES,
+    UNIFORM,
+    ChallengeScheduler,
+    new_challenge_scheduler,
+    random_challenge,
+)
+from src.challenge_protocol import ChallengeSubsetProtocol
 from src.evilnkode import AttackState, Observation
 from src.keypad.keypad import (
-    BaseKeypad,
-    RandomShuffleKeypad,
-    SlidingTowerShuffleKeypad,
+    SelectiveShuffleResult,
+    SelectiveTowerShuffleKeypad,
 )
 
 
-KeypadFactory = type[BaseKeypad]
 ProgressCallback = Callable[[int, int], None]
+SELECTIVE_TOWER = "selective-tower"
 
 
 @dataclass(frozen=True)
 class ChallengeSubsetConfig:
     number_of_keys: int = 6
-    icons_per_key: int = 9
+    icons_per_key: int = 8
     secret_length: int = 6
     challenge_length: int = 3
     max_tries: int = 3
@@ -31,15 +39,21 @@ class ChallengeSubsetConfig:
     max_observations: int = 30
     curve_observations: int = 15
     seed: int = 20_260_725
+    challenge_schedules: tuple[str, ...] = CHALLENGE_SCHEDULES
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.number_of_keys < 2:
             raise ValueError("number_of_keys must be at least 2")
-        if self.icons_per_key < 1:
-            raise ValueError("icons_per_key must be positive")
+        if self.icons_per_key < 3:
+            raise ValueError("icons_per_key must be at least 3")
         if not 1 <= self.challenge_length <= self.secret_length:
             raise ValueError(
                 "challenge_length must be between 1 and secret_length"
+            )
+        if self.challenge_length >= self.number_of_keys:
+            raise ValueError(
+                "number_of_keys must exceed challenge_length so an "
+                "unpressed key is always available"
             )
         if self.secret_length > self.total_icons:
             raise ValueError("secret_length cannot exceed the icon count")
@@ -53,6 +67,27 @@ class ChallengeSubsetConfig:
             raise ValueError(
                 "curve_observations must be between 0 and max_observations"
             )
+        if not self.challenge_schedules:
+            raise ValueError("at least one challenge schedule is required")
+        if len(set(self.challenge_schedules)) != len(
+            self.challenge_schedules
+        ):
+            raise ValueError("challenge schedules must be unique")
+        unknown_schedules = set(self.challenge_schedules) - set(
+            CHALLENGE_SCHEDULES
+        )
+        if unknown_schedules:
+            raise ValueError(
+                f"unknown challenge schedules: {sorted(unknown_schedules)}"
+            )
+        if (
+            ALTERNATING_HALVES in self.challenge_schedules
+            and self.secret_length != self.challenge_length * 2
+        ):
+            raise ValueError(
+                "alternating-halves requires the secret length to be exactly "
+                "twice the challenge length"
+            )
 
     @property
     def total_icons(self) -> int:
@@ -60,10 +95,16 @@ class ChallengeSubsetConfig:
 
     @property
     def run_name(self) -> str:
+        if self.challenge_schedules == CHALLENGE_SCHEDULES:
+            schedule_name = "all"
+        else:
+            schedule_name = "_".join(self.challenge_schedules)
         return (
             f"{self.challenge_length}of{self.secret_length}"
             f"-keys{self.number_of_keys}"
             f"-icons{self.icons_per_key}"
+            f"-shuffle-{SELECTIVE_TOWER}"
+            f"-schedules-{schedule_name}"
             f"-tries{self.max_tries}"
             f"-runs{self.run_count}"
             f"-seed{self.seed}"
@@ -71,19 +112,48 @@ class ChallengeSubsetConfig:
 
 
 @dataclass(frozen=True)
-class TrialScenario:
-    secret: tuple[int, ...]
-    observation_challenges: tuple[tuple[int, ...], ...]
-    replay_challenges: tuple[tuple[int, ...], ...]
-
-
-@dataclass(frozen=True)
 class ChallengeSubsetTrial:
     trial: int
-    shuffle: str
+    challenge_schedule: str
+    keypad_shuffle: str
     observations_to_break: int
     observations_to_guaranteed_replay: int
     replay_success_curve: tuple[float, ...]
+    position_coverage_curve: tuple[int, ...]
+    challenges: tuple[tuple[int, ...], ...]
+    challenge_overlaps: tuple[int | None, ...]
+    shuffle_results: tuple[SelectiveShuffleResult, ...]
+
+    @property
+    def mean_rotation_keys(self) -> float:
+        return mean(
+            len(result.rotation_keys)
+            for result in self.shuffle_results
+        )
+
+    @property
+    def mean_moved_icons(self) -> float:
+        return mean(result.moved_icons for result in self.shuffle_results)
+
+    @property
+    def mean_fixed_columns(self) -> float:
+        return mean(
+            len(result.fixed_columns)
+            for result in self.shuffle_results
+        )
+
+    @property
+    def max_fixed_column_streak(self) -> int:
+        active_streaks: dict[int, int] = {}
+        maximum = 0
+        for result in self.shuffle_results:
+            active_streaks = {
+                column: active_streaks.get(column, 0) + 1
+                for column in result.fixed_columns
+            }
+            if active_streaks:
+                maximum = max(maximum, max(active_streaks.values()))
+        return maximum
 
 
 @dataclass(frozen=True)
@@ -91,67 +161,140 @@ class ChallengeSubsetResult:
     config: ChallengeSubsetConfig
     trials: tuple[ChallengeSubsetTrial, ...]
 
-    def trials_for(self, shuffle: str) -> list[ChallengeSubsetTrial]:
-        return [trial for trial in self.trials if trial.shuffle == shuffle]
+    def trials_for(
+        self,
+        challenge_schedule: str,
+        keypad_shuffle: str = SELECTIVE_TOWER,
+    ) -> list[ChallengeSubsetTrial]:
+        return [
+            trial
+            for trial in self.trials
+            if (
+                trial.challenge_schedule == challenge_schedule
+                and trial.keypad_shuffle == keypad_shuffle
+            )
+        ]
 
     @property
-    def shuffles(self) -> tuple[str, ...]:
-        return tuple(dict.fromkeys(trial.shuffle for trial in self.trials))
+    def challenge_schedules(self) -> tuple[str, ...]:
+        return tuple(
+            dict.fromkeys(
+                trial.challenge_schedule
+                for trial in self.trials
+            )
+        )
+
+    @property
+    def keypad_shuffles(self) -> tuple[str, ...]:
+        return tuple(
+            dict.fromkeys(trial.keypad_shuffle for trial in self.trials)
+        )
 
     def summary(self) -> dict:
-        shuffle_summaries = {}
-        for shuffle in self.shuffles:
-            trials = self.trials_for(shuffle)
-            shuffle_summaries[shuffle] = {
-                "break_observations": _summary_statistics([
-                    trial.observations_to_break
-                    for trial in trials
-                ]),
-                "guaranteed_replay_observations": _summary_statistics([
-                    trial.observations_to_guaranteed_replay
-                    for trial in trials
-                ]),
-                "next_login_success": {
-                    str(observation_count): mean(
-                        trial.replay_success_curve[observation_count]
+        schedule_results = {}
+        for schedule in self.challenge_schedules:
+            trials = self.trials_for(schedule)
+            overlaps = [
+                overlap
+                for trial in trials
+                for overlap in trial.challenge_overlaps
+                if overlap is not None
+            ]
+            schedule_results[schedule] = {
+                SELECTIVE_TOWER: {
+                    "break_observations": _summary_statistics([
+                        trial.observations_to_break
                         for trial in trials
-                    )
-                    for observation_count in range(
-                        self.config.curve_observations + 1
-                    )
-                },
+                    ]),
+                    "guaranteed_replay_observations": _summary_statistics([
+                        trial.observations_to_guaranteed_replay
+                        for trial in trials
+                    ]),
+                    "next_login_success": {
+                        str(observation_count): mean(
+                            trial.replay_success_curve[observation_count]
+                            for trial in trials
+                        )
+                        for observation_count in range(
+                            self.config.curve_observations + 1
+                        )
+                    },
+                    "position_coverage": {
+                        str(observation_count): mean(
+                            trial.position_coverage_curve[observation_count]
+                            for trial in trials
+                        )
+                        for observation_count in range(
+                            self.config.curve_observations + 1
+                        )
+                    },
+                    "mean_consecutive_overlap": (
+                        mean(overlaps) if overlaps else 0.0
+                    ),
+                    "mean_rotation_keys": mean(
+                        trial.mean_rotation_keys
+                        for trial in trials
+                    ),
+                    "mean_moved_icons": mean(
+                        trial.mean_moved_icons
+                        for trial in trials
+                    ),
+                    "mean_fixed_columns": mean(
+                        trial.mean_fixed_columns
+                        for trial in trials
+                    ),
+                    "mean_max_fixed_column_streak": mean(
+                        trial.max_fixed_column_streak
+                        for trial in trials
+                    ),
+                }
             }
 
-        paired_by_shuffle = {
-            shuffle: {
+        paired_deltas = {}
+        if (
+            UNIFORM in self.challenge_schedules
+            and ALTERNATING_HALVES in self.challenge_schedules
+        ):
+            uniform_trials = {
                 trial.trial: trial
-                for trial in self.trials_for(shuffle)
+                for trial in self.trials_for(UNIFORM)
             }
-            for shuffle in self.shuffles
-        }
-        random_trials = paired_by_shuffle["random"]
-        tower_trials = paired_by_shuffle["tower"]
-        paired_trial_ids = sorted(set(random_trials) & set(tower_trials))
+            alternating_trials = {
+                trial.trial: trial
+                for trial in self.trials_for(ALTERNATING_HALVES)
+            }
+            paired_trial_ids = sorted(
+                set(uniform_trials) & set(alternating_trials)
+            )
+            paired_deltas[
+                f"{ALTERNATING_HALVES}_minus_{UNIFORM}"
+            ] = {
+                SELECTIVE_TOWER: {
+                    "break_observations": _summary_statistics([
+                        alternating_trials[
+                            trial_id
+                        ].observations_to_break
+                        - uniform_trials[
+                            trial_id
+                        ].observations_to_break
+                        for trial_id in paired_trial_ids
+                    ]),
+                    "guaranteed_replay_observations": _summary_statistics([
+                        alternating_trials[
+                            trial_id
+                        ].observations_to_guaranteed_replay
+                        - uniform_trials[
+                            trial_id
+                        ].observations_to_guaranteed_replay
+                        for trial_id in paired_trial_ids
+                    ]),
+                }
+            }
 
         return {
             "config": asdict(self.config),
-            "shuffle_results": shuffle_summaries,
-            "tower_minus_random": {
-                "break_observations": _summary_statistics([
-                    tower_trials[trial_id].observations_to_break
-                    - random_trials[trial_id].observations_to_break
-                    for trial_id in paired_trial_ids
-                ]),
-                "guaranteed_replay_observations": _summary_statistics([
-                    tower_trials[
-                        trial_id
-                    ].observations_to_guaranteed_replay
-                    - random_trials[
-                        trial_id
-                    ].observations_to_guaranteed_replay
-                    for trial_id in paired_trial_ids
-                ]),
-            },
+            "results": schedule_results,
+            "paired_deltas": paired_deltas,
         }
 
 
@@ -161,6 +304,8 @@ def _nearest_rank(values: list[int], probability: float) -> int:
 
 
 def _summary_statistics(values: list[int]) -> dict[str, float | int]:
+    if not values:
+        raise ValueError("summary statistics require at least one value")
     return {
         "mean": mean(values),
         "median": median(values),
@@ -176,63 +321,66 @@ def _random_challenge(
     secret_length: int,
     challenge_length: int,
 ) -> tuple[int, ...]:
-    return tuple(sorted(
-        int(position)
-        for position in rng.choice(
-            secret_length,
-            size=challenge_length,
-            replace=False,
-        )
-    ))
+    return random_challenge(rng, secret_length, challenge_length)
 
 
-def _new_scenario(
+def _rng(
     config: ChallengeSubsetConfig,
-    rng: np.random.Generator,
-) -> TrialScenario:
-    secret = tuple(
-        int(icon)
-        for icon in rng.choice(
-            config.total_icons,
-            size=config.secret_length,
-            replace=False,
-        )
+    domain: int,
+    trial_index: int,
+) -> np.random.Generator:
+    return np.random.default_rng(
+        np.random.SeedSequence([
+            config.seed,
+            domain,
+            trial_index,
+        ])
     )
-    observation_challenges = tuple(
-        _random_challenge(
-            rng,
-            config.secret_length,
-            config.challenge_length,
-        )
-        for _ in range(config.max_observations)
+
+
+def _new_keypad(
+    config: ChallengeSubsetConfig,
+    trial_index: int,
+) -> SelectiveTowerShuffleKeypad:
+    return SelectiveTowerShuffleKeypad.new_keypad(
+        k=config.number_of_keys,
+        p=config.icons_per_key,
+        rng=_rng(config, 1, trial_index),
+        tower_init_rng=_rng(config, 2, trial_index),
+        extra_key_rng=_rng(config, 3, trial_index),
+        rotation_rng=_rng(config, 4, trial_index),
+        tower_floor_rng=_rng(config, 5, trial_index),
     )
-    replay_challenges = tuple(
-        _random_challenge(
-            rng,
-            config.secret_length,
-            config.challenge_length,
-        )
-        for _ in range(config.max_observations + 1)
-    )
-    return TrialScenario(
-        secret=secret,
-        observation_challenges=observation_challenges,
-        replay_challenges=replay_challenges,
+
+
+def _new_scheduler(
+    name: str,
+    config: ChallengeSubsetConfig,
+    trial_index: int,
+) -> ChallengeScheduler:
+    return new_challenge_scheduler(
+        name=name,
+        secret_length=config.secret_length,
+        challenge_length=config.challenge_length,
+        rng=_rng(config, 6, trial_index),
     )
 
 
 def _run_trial(
     trial_index: int,
-    shuffle_name: str,
-    keypad_factory: KeypadFactory,
-    scenario: TrialScenario,
+    challenge_schedule: str,
+    secret: tuple[int, ...],
     config: ChallengeSubsetConfig,
-    rng: np.random.Generator,
 ) -> ChallengeSubsetTrial:
-    keypad = keypad_factory.new_keypad(
-        config.number_of_keys,
-        config.icons_per_key,
-        rng=rng,
+    keypad = _new_keypad(config, trial_index)
+    scheduler = _new_scheduler(
+        challenge_schedule,
+        config,
+        trial_index,
+    )
+    protocol = ChallengeSubsetProtocol(
+        scheduler=scheduler,
+        keypad=keypad,
     )
     attack = AttackState.unknown_secret(
         config.secret_length,
@@ -241,14 +389,21 @@ def _run_trial(
     observations_to_break = None
     observations_to_guaranteed_replay = None
     replay_success_curve = []
+    position_coverage_curve = [0]
+    challenges = []
+    challenge_overlaps = []
+    shuffle_results = []
+    observed_positions: set[int] = set()
+    previous_challenge: tuple[int, ...] | None = None
 
     for observation_count in range(config.max_observations + 1):
-        replay_challenge = scenario.replay_challenges[observation_count]
+        active_challenge = protocol.current_challenge()
+        challenge_positions = active_challenge.positions
         if observation_count <= config.curve_observations:
             replay_success_curve.append(
                 attack.replay_success_probability(
                     keypad=keypad.keypad_mat(),
-                    challenge_positions=replay_challenge,
+                    challenge_positions=challenge_positions,
                     max_tries=config.max_tries,
                 )
             )
@@ -256,7 +411,7 @@ def _run_trial(
             observations_to_guaranteed_replay is None
             and attack.replay_support(
                 keypad=keypad.keypad_mat(),
-                challenge_positions=replay_challenge,
+                challenge_positions=challenge_positions,
             ) <= config.max_tries
         ):
             observations_to_guaranteed_replay = observation_count
@@ -264,17 +419,27 @@ def _run_trial(
         if observation_count == config.max_observations:
             break
 
-        challenge_positions = scenario.observation_challenges[observation_count]
         challenged_icons = [
-            scenario.secret[position]
+            secret[position]
             for position in challenge_positions
         ]
-        observation = Observation(
+        key_selection = keypad.key_entry(challenged_icons)
+        attack.observe(Observation(
             keypad=keypad.keypad_mat(),
-            key_selection=keypad.key_entry(challenged_icons),
+            key_selection=key_selection,
             challenge_positions=challenge_positions,
-        )
-        attack.observe(observation)
+        ))
+
+        challenges.append(challenge_positions)
+        if previous_challenge is None:
+            challenge_overlaps.append(None)
+        else:
+            challenge_overlaps.append(len(
+                set(previous_challenge) & set(challenge_positions)
+            ))
+        previous_challenge = challenge_positions
+        observed_positions.update(challenge_positions)
+        position_coverage_curve.append(len(observed_positions))
 
         completed_observations = observation_count + 1
         if (
@@ -285,25 +450,36 @@ def _run_trial(
             if observations_to_guaranteed_replay is None:
                 observations_to_guaranteed_replay = completed_observations
 
-        keypad.shuffle()
+        advance = protocol.complete_success(
+            challenge_id=active_challenge.challenge_id,
+            selected_keys=key_selection,
+        )
+        shuffle_results.append(advance.shuffle_result)
 
     if observations_to_break is None:
         raise RuntimeError(
-            f"{shuffle_name} trial {trial_index} did not break within "
+            f"{challenge_schedule} trial {trial_index} did not break within "
             f"{config.max_observations} observations"
         )
     if observations_to_guaranteed_replay is None:
         raise RuntimeError(
-            f"{shuffle_name} trial {trial_index} did not become replayable "
-            f"within {config.max_observations} observations"
+            f"{challenge_schedule} trial {trial_index} did not become "
+            f"replayable within {config.max_observations} observations"
         )
 
     return ChallengeSubsetTrial(
         trial=trial_index,
-        shuffle=shuffle_name,
+        challenge_schedule=challenge_schedule,
+        keypad_shuffle=SELECTIVE_TOWER,
         observations_to_break=observations_to_break,
-        observations_to_guaranteed_replay=observations_to_guaranteed_replay,
+        observations_to_guaranteed_replay=(
+            observations_to_guaranteed_replay
+        ),
         replay_success_curve=tuple(replay_success_curve),
+        position_coverage_curve=tuple(position_coverage_curve),
+        challenges=tuple(challenges),
+        challenge_overlaps=tuple(challenge_overlaps),
+        shuffle_results=tuple(shuffle_results),
     )
 
 
@@ -311,34 +487,22 @@ def run_challenge_subset_benchmark(
     config: ChallengeSubsetConfig,
     progress: ProgressCallback | None = None,
 ) -> ChallengeSubsetResult:
-    scenario_rng = np.random.default_rng(
-        np.random.SeedSequence([config.seed, 0])
-    )
-    shuffle_factories = (
-        ("random", RandomShuffleKeypad),
-        ("tower", SlidingTowerShuffleKeypad),
-    )
     trials = []
     for trial_index in range(config.run_count):
-        scenario = _new_scenario(config, scenario_rng)
-        for shuffle_index, (shuffle_name, keypad_factory) in enumerate(
-            shuffle_factories,
-            start=1,
-        ):
-            shuffle_rng = np.random.default_rng(
-                np.random.SeedSequence([
-                    config.seed,
-                    shuffle_index,
-                    trial_index,
-                ])
+        secret = tuple(
+            int(icon)
+            for icon in _rng(config, 0, trial_index).choice(
+                config.total_icons,
+                size=config.secret_length,
+                replace=False,
             )
+        )
+        for schedule in config.challenge_schedules:
             trials.append(_run_trial(
                 trial_index=trial_index,
-                shuffle_name=shuffle_name,
-                keypad_factory=keypad_factory,
-                scenario=scenario,
+                challenge_schedule=schedule,
+                secret=secret,
                 config=config,
-                rng=shuffle_rng,
             ))
         if progress is not None:
             progress(trial_index + 1, config.run_count)
@@ -369,16 +533,26 @@ def write_challenge_subset_artifacts(
         writer = csv.writer(file)
         writer.writerow([
             "trial",
-            "shuffle",
+            "challenge_schedule",
+            "keypad_shuffle",
             "observations_to_break",
             "observations_to_guaranteed_replay",
+            "mean_rotation_keys",
+            "mean_moved_icons",
+            "mean_fixed_columns",
+            "max_fixed_column_streak",
         ])
         for trial in result.trials:
             writer.writerow([
                 trial.trial,
-                trial.shuffle,
+                trial.challenge_schedule,
+                trial.keypad_shuffle,
                 trial.observations_to_break,
                 trial.observations_to_guaranteed_replay,
+                trial.mean_rotation_keys,
+                trial.mean_moved_icons,
+                trial.mean_fixed_columns,
+                trial.max_fixed_column_streak,
             ])
 
     with (output_dir / "replay_curve.csv").open(
@@ -389,18 +563,78 @@ def write_challenge_subset_artifacts(
         writer = csv.writer(file)
         writer.writerow([
             "observations",
-            "shuffle",
+            "challenge_schedule",
+            "keypad_shuffle",
             "next_login_success_probability",
+            "mean_positions_covered",
         ])
-        for shuffle in result.shuffles:
-            curve = summary["shuffle_results"][
-                shuffle
-            ]["next_login_success"]
-            for observation_count, probability in curve.items():
+        for schedule in result.challenge_schedules:
+            schedule_summary = summary["results"][
+                schedule
+            ][SELECTIVE_TOWER]
+            for observation_count in range(
+                result.config.curve_observations + 1
+            ):
                 writer.writerow([
                     observation_count,
-                    shuffle,
-                    probability,
+                    schedule,
+                    SELECTIVE_TOWER,
+                    schedule_summary["next_login_success"][
+                        str(observation_count)
+                    ],
+                    schedule_summary["position_coverage"][
+                        str(observation_count)
+                    ],
+                ])
+
+    with (output_dir / "transition_metrics.csv").open(
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        writer = csv.writer(file)
+        writer.writerow([
+            "trial",
+            "observation",
+            "challenge_schedule",
+            "keypad_shuffle",
+            "challenge_positions",
+            "consecutive_overlap",
+            "positions_covered",
+            "rotation_keys",
+            "moved_icons",
+            "fixed_column_count",
+            "fixed_column_ids",
+        ])
+        for trial in result.trials:
+            for observation_index, shuffle_result in enumerate(
+                trial.shuffle_results,
+                start=1,
+            ):
+                challenge = "|".join(
+                    str(position + 1)
+                    for position in trial.challenges[
+                        observation_index - 1
+                    ]
+                )
+                overlap = trial.challenge_overlaps[
+                    observation_index - 1
+                ]
+                writer.writerow([
+                    trial.trial,
+                    observation_index,
+                    trial.challenge_schedule,
+                    trial.keypad_shuffle,
+                    challenge,
+                    "" if overlap is None else overlap,
+                    trial.position_coverage_curve[observation_index],
+                    len(shuffle_result.rotation_keys),
+                    shuffle_result.moved_icons,
+                    len(shuffle_result.fixed_columns),
+                    "|".join(
+                        str(column)
+                        for column in shuffle_result.fixed_columns
+                    ),
                 ])
 
     _write_charts(result, output_dir)
@@ -420,17 +654,20 @@ def _write_charts(
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    colors = {"random": "#7d93d8", "tower": "#ff5a1f"}
+    colors = {
+        UNIFORM: "#7d93d8",
+        ALTERNATING_HALVES: "#ff5a1f",
+    }
     figure, axes = plt.subplots(1, 2, figsize=(12, 5))
-    for shuffle in result.shuffles:
-        trials = result.trials_for(shuffle)
+    for schedule in result.challenge_schedules:
+        trials = result.trials_for(schedule)
         axes[0].hist(
             [trial.observations_to_break for trial in trials],
             bins=range(result.config.max_observations + 2),
             histtype="step",
             linewidth=2,
-            label=shuffle,
-            color=colors[shuffle],
+            label=schedule,
+            color=colors[schedule],
         )
         axes[1].hist(
             [
@@ -440,8 +677,8 @@ def _write_charts(
             bins=range(result.config.max_observations + 2),
             histtype="step",
             linewidth=2,
-            label=shuffle,
-            color=colors[shuffle],
+            label=schedule,
+            color=colors[schedule],
         )
     axes[0].set_title("Observations to crack")
     axes[1].set_title("Observations to guaranteed replay")
@@ -456,18 +693,18 @@ def _write_charts(
 
     summary = result.summary()
     figure, axis = plt.subplots(figsize=(8, 5))
-    for shuffle in result.shuffles:
-        curve = summary["shuffle_results"][
-            shuffle
-        ]["next_login_success"]
+    for schedule in result.challenge_schedules:
+        curve = summary["results"][
+            schedule
+        ][SELECTIVE_TOWER]["next_login_success"]
         observations = [int(value) for value in curve]
         probabilities = [curve[str(value)] * 100 for value in observations]
         axis.plot(
             observations,
             probabilities,
             marker="o",
-            label=shuffle,
-            color=colors[shuffle],
+            label=schedule,
+            color=colors[schedule],
         )
     axis.set_title("Optimal three-try success on the next login")
     axis.set_xlabel("Completed observations")
@@ -486,77 +723,109 @@ def _markdown_report(
 ) -> str:
     config = result.config
     lines = [
-        "# Challenge-Subset nKode: 3-of-6 Shuffle Comparison",
+        "# Challenge-Subset nKode: Scheduler Comparison",
         "",
         "## Configuration",
         "",
-        f"- Trials per shuffle: {config.run_count:,}",
+        f"- Trials per schedule: {config.run_count:,}",
         f"- Layout: {config.number_of_keys} keys × "
         f"{config.icons_per_key} icons",
         f"- Secret/challenge: {config.challenge_length}-of-"
         f"{config.secret_length}",
+        f"- Keypad shuffle: `{SELECTIVE_TOWER}`",
+        f"- Challenge schedules: "
+        f"{', '.join(f'`{name}`' for name in result.challenge_schedules)}",
         f"- Attempt budget: {config.max_tries}",
         f"- Seed: `{config.seed}`",
         "",
-        "Each challenge is a uniformly random subset of distinct secret "
-        "positions, entered in ascending position order.",
+        "The active challenge is used for both the replay calculation and the "
+        "successful observed login. The keypad and scheduler advance once "
+        "after that success.",
         "",
         "## Observation Results",
         "",
-        "| Shuffle | Metric | Mean | Median | P90 | P95 | Min | Max |",
+        "| Schedule | Metric | Mean | Median | P90 | P95 | Min | Max |",
         "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
-    for shuffle in result.shuffles:
-        shuffle_summary = summary["shuffle_results"][shuffle]
+    for schedule in result.challenge_schedules:
+        schedule_summary = summary["results"][
+            schedule
+        ][SELECTIVE_TOWER]
         for label, key in (
             ("Crack", "break_observations"),
             ("Guaranteed replay", "guaranteed_replay_observations"),
         ):
-            stats = shuffle_summary[key]
+            stats = schedule_summary[key]
             lines.append(
-                f"| {shuffle.title()} | {label} | "
+                f"| {schedule} | {label} | "
                 f"{stats['mean']:.2f} | {stats['median']:.1f} | "
                 f"{stats['p90']} | {stats['p95']} | "
                 f"{stats['minimum']} | {stats['maximum']} |"
             )
 
-    delta = summary["tower_minus_random"]
+    delta_key = f"{ALTERNATING_HALVES}_minus_{UNIFORM}"
+    if delta_key in summary["paired_deltas"]:
+        delta = summary["paired_deltas"][
+            delta_key
+        ][SELECTIVE_TOWER]
+        lines.extend([
+            "",
+            "## Alternating-halves Minus Uniform",
+            "",
+            "| Metric | Mean delta | Median delta | P90 | P95 |",
+            "|---|---:|---:|---:|---:|",
+        ])
+        for label, key in (
+            ("Crack", "break_observations"),
+            ("Guaranteed replay", "guaranteed_replay_observations"),
+        ):
+            stats = delta[key]
+            lines.append(
+                f"| {label} | {stats['mean']:.2f} | "
+                f"{stats['median']:.1f} | {stats['p90']} | "
+                f"{stats['p95']} |"
+            )
+
     lines.extend([
         "",
-        "## Tower Minus Random",
+        "## Selective-shuffle Metrics",
         "",
-        "| Metric | Mean delta | Median delta | P90 | P95 |",
-        "|---|---:|---:|---:|---:|",
+        "| Schedule | Mean overlap | Mean rotation keys | "
+        "Mean moved icons | Mean fixed columns | "
+        "Mean max fixed-column streak |",
+        "|---|---:|---:|---:|---:|---:|",
     ])
-    for label, key in (
-        ("Crack", "break_observations"),
-        ("Guaranteed replay", "guaranteed_replay_observations"),
-    ):
-        stats = delta[key]
+    for schedule in result.challenge_schedules:
+        values = summary["results"][schedule][SELECTIVE_TOWER]
         lines.append(
-            f"| {label} | {stats['mean']:.2f} | "
-            f"{stats['median']:.1f} | {stats['p90']} | "
-            f"{stats['p95']} |"
+            f"| {schedule} | "
+            f"{values['mean_consecutive_overlap']:.2f} | "
+            f"{values['mean_rotation_keys']:.2f} | "
+            f"{values['mean_moved_icons']:.2f} | "
+            f"{values['mean_fixed_columns']:.2f} | "
+            f"{values['mean_max_fixed_column_streak']:.2f} |"
         )
 
     lines.extend([
         "",
         "## Optimal three-try success on the next login",
         "",
-        "| Observations | Random | Tower |",
-        "|---:|---:|---:|",
+        "| Observations | "
+        + " | ".join(result.challenge_schedules)
+        + " |",
+        "|---:|" + "---:|" * len(result.challenge_schedules),
     ])
-    random_curve = summary["shuffle_results"][
-        "random"
-    ]["next_login_success"]
-    tower_curve = summary["shuffle_results"][
-        "tower"
-    ]["next_login_success"]
     for observation_count in range(config.curve_observations + 1):
+        values = [
+            summary["results"][schedule][
+                SELECTIVE_TOWER
+            ]["next_login_success"][str(observation_count)] * 100
+            for schedule in result.challenge_schedules
+        ]
         lines.append(
             f"| {observation_count} | "
-            f"{random_curve[str(observation_count)] * 100:.2f}% | "
-            f"{tower_curve[str(observation_count)] * 100:.2f}% |"
+            + " | ".join(f"{value:.2f}%" for value in values)
+            + " |"
         )
 
     lines.extend([
@@ -564,12 +833,14 @@ def _markdown_report(
         "## Method",
         "",
         "- A crack occurs when at most three full-secret candidates remain.",
-        "- Guaranteed replay occurs when a random next challenge has at most "
-        "three possible key sequences.",
+        "- Guaranteed replay occurs when the active next challenge has at "
+        "most three possible key sequences.",
         "- Replay probability sums the three most likely key sequences under "
         "the independent-position posterior.",
-        "- Both shuffles use identical secrets and challenge sequences for "
-        "each paired trial.",
+        "- Every successful observation adds one unpressed key to the "
+        "distinct pressed keys and selectively advances the column tower.",
+        "- Paired schedules use identical secrets, initial keypads, initial "
+        "tower state, and domain-separated deterministic random streams.",
         "",
         "![Observation distributions](observation_distributions.png)",
         "",

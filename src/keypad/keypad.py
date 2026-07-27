@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from src.keypad.tower_shuffle import TowerShuffle
 from abc import ABC, abstractmethod
-from typing import Self
+from typing import Self, Sequence
 
 
 class BaseKeypad(ABC):
@@ -92,6 +92,160 @@ class SlidingTowerShuffleKeypad(BaseKeypad):
             set_view[idx] = np.roll(icon_set, shift)
         self.keypad = set_view.T
         self.tower_shuffle.shuffle()
+
+
+@dataclass(frozen=True)
+class SelectiveShuffleResult:
+    pressed_keys: tuple[int, ...]
+    rotation_keys: tuple[int, ...]
+    left_shift: int
+    right_shift: int
+    moved_icons: int
+    fixed_columns: tuple[int, ...]
+
+
+def _child_rng(rng: np.random.Generator) -> np.random.Generator:
+    seed = int(rng.integers(0, np.iinfo(np.int64).max))
+    return np.random.default_rng(seed)
+
+
+@dataclass
+class SelectiveTowerShuffleKeypad(BaseKeypad):
+    keypad: np.ndarray
+    k: int
+    p: int
+    tower_shuffle: TowerShuffle
+    extra_key_rng: np.random.Generator = field(
+        default_factory=np.random.default_rng,
+        repr=False,
+        compare=False,
+    )
+    rotation_rng: np.random.Generator = field(
+        default_factory=np.random.default_rng,
+        repr=False,
+        compare=False,
+    )
+    tower_floor_rng: np.random.Generator = field(
+        default_factory=np.random.default_rng,
+        repr=False,
+        compare=False,
+    )
+
+    @classmethod
+    def new_keypad(
+        cls,
+        k: int,
+        p: int,
+        rng: np.random.Generator | None = None,
+        tower_init_rng: np.random.Generator | None = None,
+        extra_key_rng: np.random.Generator | None = None,
+        rotation_rng: np.random.Generator | None = None,
+        tower_floor_rng: np.random.Generator | None = None,
+    ) -> Self:
+        if k < 2:
+            raise ValueError("selective tower shuffle requires at least 2 keys")
+        if p < 3:
+            raise ValueError(
+                "selective tower shuffle requires at least 3 icon columns"
+            )
+        if rng is None:
+            rng = np.random.default_rng()
+        keypad = cls._build_keypad(k, p, rng)
+        if tower_init_rng is None:
+            tower_init_rng = _child_rng(rng)
+        if extra_key_rng is None:
+            extra_key_rng = _child_rng(rng)
+        if rotation_rng is None:
+            rotation_rng = _child_rng(rng)
+        if tower_floor_rng is None:
+            tower_floor_rng = _child_rng(rng)
+        return cls(
+            keypad=keypad,
+            k=k,
+            p=p,
+            tower_shuffle=TowerShuffle.new(p, tower_init_rng),
+            extra_key_rng=extra_key_rng,
+            rotation_rng=rotation_rng,
+            tower_floor_rng=tower_floor_rng,
+        )
+
+    def shuffle(
+        self,
+        selected_keys: Sequence[int] | None = None,
+    ) -> SelectiveShuffleResult:
+        if selected_keys is None:
+            raise ValueError(
+                "selective tower shuffle requires the keys pressed "
+                "during the successful login"
+            )
+        pressed_keys = tuple(sorted({int(key) for key in selected_keys}))
+        if not pressed_keys:
+            raise ValueError("selected_keys must contain at least one key")
+        if any(key < 0 or key >= self.k for key in pressed_keys):
+            raise ValueError("selected_keys contains an out-of-range key")
+
+        unpressed_keys = [
+            key
+            for key in range(self.k)
+            if key not in pressed_keys
+        ]
+        if not unpressed_keys:
+            raise ValueError(
+                "selective tower shuffle requires at least one unpressed key"
+            )
+        extra_key = int(self.extra_key_rng.choice(unpressed_keys))
+        rotation_keys = tuple(sorted((*pressed_keys, extra_key)))
+        ring_size = len(rotation_keys)
+
+        if ring_size == 2:
+            if int(self.rotation_rng.integers(0, 2)) == 0:
+                left_shift, right_shift = 1, 0
+            else:
+                left_shift, right_shift = 0, 1
+        else:
+            shifts = self.rotation_rng.permutation(
+                np.arange(1, ring_size)
+            )[:2]
+            left_shift, right_shift = (int(shifts[0]), int(shifts[1]))
+
+        left_columns = set(self.tower_shuffle.left_tower.tolist())
+        before = self.keypad.copy()
+        set_view = self.keypad.T.copy()
+        ring_index = np.array(rotation_keys)
+        for column in range(self.p):
+            shift = (
+                left_shift
+                if column in left_columns
+                else right_shift
+            )
+            if shift:
+                set_view[column, ring_index] = np.roll(
+                    set_view[column, ring_index],
+                    shift,
+                )
+        self.keypad = set_view.T
+
+        if left_shift == 0:
+            fixed_columns = tuple(sorted(left_columns))
+        elif right_shift == 0:
+            fixed_columns = tuple(
+                column
+                for column in range(self.p)
+                if column not in left_columns
+            )
+        else:
+            fixed_columns = ()
+
+        result = SelectiveShuffleResult(
+            pressed_keys=pressed_keys,
+            rotation_keys=rotation_keys,
+            left_shift=left_shift,
+            right_shift=right_shift,
+            moved_icons=int(np.count_nonzero(before != self.keypad)),
+            fixed_columns=fixed_columns,
+        )
+        self.tower_shuffle.shuffle(self.tower_floor_rng)
+        return result
 
 
 @dataclass

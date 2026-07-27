@@ -1,7 +1,9 @@
 import argparse
 from pathlib import Path
 
+from src.challenge_schedule import CHALLENGE_SCHEDULES
 from src.challenge_subset import (
+    SELECTIVE_TOWER,
     ChallengeSubsetConfig,
     run_challenge_subset_benchmark,
     write_challenge_subset_artifacts,
@@ -11,11 +13,12 @@ from src.challenge_subset import (
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Compare random and tower shuffling for challenge-subset nKode"
+            "Compare uniform and alternating 3-of-6 challenges with the "
+            "selective tower shuffle"
         )
     )
     parser.add_argument("--number-of-keys", type=int, default=6)
-    parser.add_argument("--icons-per-key", type=int, default=9)
+    parser.add_argument("--icons-per-key", type=int, default=8)
     parser.add_argument("--secret-length", type=int, default=6)
     parser.add_argument("--challenge-length", type=int, default=3)
     parser.add_argument("--max-tries", type=int, default=3)
@@ -23,6 +26,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-observations", type=int, default=30)
     parser.add_argument("--curve-observations", type=int, default=15)
     parser.add_argument("--seed", type=int, default=20_260_725)
+    parser.add_argument(
+        "--challenge-schedule",
+        choices=("all", *CHALLENGE_SCHEDULES),
+        default="all",
+        help="run both challenge schedules or select one",
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -38,6 +47,11 @@ def _parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = _parser().parse_args()
+    challenge_schedules = (
+        CHALLENGE_SCHEDULES
+        if args.challenge_schedule == "all"
+        else (args.challenge_schedule,)
+    )
     config = ChallengeSubsetConfig(
         number_of_keys=args.number_of_keys,
         icons_per_key=args.icons_per_key,
@@ -48,13 +62,14 @@ def main() -> None:
         max_observations=args.max_observations,
         curve_observations=args.curve_observations,
         seed=args.seed,
+        challenge_schedules=challenge_schedules,
     )
 
     progress_interval = max(1, config.run_count // 10)
 
     def show_progress(completed: int, total: int) -> None:
         if completed % progress_interval == 0 or completed == total:
-            print(f"Completed {completed:,}/{total:,} paired trials")
+            print(f"Completed {completed:,}/{total:,} trial scenarios")
 
     result = run_challenge_subset_benchmark(
         config=config,
@@ -67,14 +82,14 @@ def main() -> None:
     )
 
     summary = result.summary()
-    for shuffle in result.shuffles:
-        shuffle_summary = summary["shuffle_results"][shuffle]
-        break_mean = shuffle_summary["break_observations"]["mean"]
-        replay_mean = shuffle_summary[
+    for schedule in result.challenge_schedules:
+        schedule_summary = summary["results"][schedule][SELECTIVE_TOWER]
+        break_mean = schedule_summary["break_observations"]["mean"]
+        replay_mean = schedule_summary[
             "guaranteed_replay_observations"
         ]["mean"]
         print(
-            f"{shuffle.title()}: crack={break_mean:.2f}, "
+            f"{schedule}: crack={break_mean:.2f}, "
             f"guaranteed replay={replay_mean:.2f} observations"
         )
     print(f"Artifacts: {output_dir.resolve()}")
