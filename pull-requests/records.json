@@ -1,0 +1,405 @@
+[
+  {
+    "number": 1,
+    "title": "update readme",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/1",
+    "created_at": "2025-03-30T10:07:32Z",
+    "updated_at": "2025-03-30T10:07:44Z",
+    "closed_at": "2025-03-30T10:07:42Z",
+    "merged": true,
+    "merged_at": "2025-03-30T10:07:42Z",
+    "merge_commit_sha": "b969cb52166ff51f6319e048062f0664a4bf9425",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "refs/pull/1/head",
+      "sha": "8d4af7598461aab00e077194f41a5b2918c805bd",
+      "label": "refs/pull/1/head"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 2,
+    "title": "add nkode analysis",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/2",
+    "created_at": "2025-06-19T16:37:34Z",
+    "updated_at": "2025-06-19T16:37:42Z",
+    "closed_at": "2025-06-19T16:37:40Z",
+    "merged": true,
+    "merged_at": "2025-06-19T16:37:40Z",
+    "merge_commit_sha": "da80dd3932f1ffb31b452cad40e0406e8cebbd9e",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "refs/pull/2/head",
+      "sha": "a0b43f9e7ecfb37a48534a9d55109c36504e6b40",
+      "label": "refs/pull/2/head"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 3,
+    "title": "visualNKode",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/3",
+    "created_at": "2025-08-19T16:06:27Z",
+    "updated_at": "2025-08-19T16:06:34Z",
+    "closed_at": "2025-08-19T16:06:33Z",
+    "merged": true,
+    "merged_at": "2025-08-19T16:06:33Z",
+    "merge_commit_sha": "03d5ef14ae29d68ab9bbeb3fe704844dc4d78a24",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "visualNKode",
+      "sha": "4fa7a621d72675b3f854a5cfbd144543ce4d16ed",
+      "label": "visualNKode"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 4,
+    "title": "evenly spaced boxes",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/4",
+    "created_at": "2025-08-19T16:11:00Z",
+    "updated_at": "2025-08-19T16:11:09Z",
+    "closed_at": "2025-08-19T16:11:08Z",
+    "merged": true,
+    "merged_at": "2025-08-19T16:11:08Z",
+    "merge_commit_sha": "fecbf3cd194d5d0ec3505ee821de417101552287",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "evenlySpacedBoxes",
+      "sha": "e19ae0744452e3151ca4d8f6a670076cee49f5bb",
+      "label": "evenlySpacedBoxes"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 5,
+    "title": "fix visualnkode",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/5",
+    "created_at": "2025-08-21T15:49:38Z",
+    "updated_at": "2025-08-21T15:49:45Z",
+    "closed_at": "2025-08-21T15:49:44Z",
+    "merged": true,
+    "merged_at": "2025-08-21T15:49:44Z",
+    "merge_commit_sha": "0b39710a780d562aaf5b6d87e4fa07bcbd1a2adc",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "BugFixFullShuffle",
+      "sha": "d43a772195c045602aeab2fda35a4e4f3d04f674",
+      "label": "BugFixFullShuffle"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 6,
+    "title": "TowerShuffle",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/6",
+    "created_at": "2025-08-29T19:19:13Z",
+    "updated_at": "2025-08-29T19:19:21Z",
+    "closed_at": "2025-08-29T19:19:19Z",
+    "merged": true,
+    "merged_at": "2025-08-29T19:19:19Z",
+    "merge_commit_sha": "6d07c24c71ebda8e9b7156c7abb64548969b9a25",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "TowerShuffle",
+      "sha": "c84b4067d649c14ed975abd5d81c2533139c0cd3",
+      "label": "TowerShuffle"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 7,
+    "title": "implement replay analysis",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/7",
+    "created_at": "2025-09-05T16:02:14Z",
+    "updated_at": "2025-09-05T16:02:30Z",
+    "closed_at": "2025-09-05T16:02:30Z",
+    "merged": true,
+    "merged_at": "2025-09-05T16:02:30Z",
+    "merge_commit_sha": "6c07d62cbe92f16aa5f414e07600672f5305780c",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "ReplayAttack",
+      "sha": "12938ef1d12117e83c6bade9ed1400a40f1ddd91",
+      "label": "ReplayAttack"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 8,
+    "title": "Refactor",
+    "body": "",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/8",
+    "created_at": "2025-09-09T18:22:12Z",
+    "updated_at": "2025-09-09T18:22:23Z",
+    "closed_at": "2025-09-09T18:22:22Z",
+    "merged": true,
+    "merged_at": "2025-09-09T18:22:22Z",
+    "merge_commit_sha": "e24fe3b51217b1a73f7e1effcb493e8488074c02",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "hammer",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "Refactor",
+      "sha": "68c79467e4e5f76590d8fdefea07f9871591f403",
+      "label": "Refactor"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 9,
+    "title": "Fix replay/break ordering in EvilNKode benchmark",
+    "body": "Evaluate replay before folding the observation in, evaluate break\r\nafter, and drop the invalid assert that crashed when break preceded\r\nreplay.",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/9",
+    "created_at": "2026-06-03T23:24:36Z",
+    "updated_at": "2026-07-27T01:17:03Z",
+    "closed_at": "2026-07-27T01:17:03Z",
+    "merged": false,
+    "merged_at": null,
+    "merge_commit_sha": null,
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "jkelly",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "observation_fix",
+      "sha": "bfa87718f56defb5392c918607b21a9f265b9d58",
+      "label": "observation_fix"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 10,
+    "title": "Fix nKode observation counting",
+    "body": "## Summary\n- count the observation that crosses the nKode candidate threshold\n- match the Rust tower shuffle partition rotations and floor ordering\n- add exact 6x8 regression coverage and refresh stored examples\n\n## Validation\n- 18 tests passed with benchmark output isolated to a temporary directory\n- 10,000-run 6x8 tower-shuffle verification: all outcomes were break=4, replay=4\n- compileall, notebook JSON validation, and git diff checks passed",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/10",
+    "created_at": "2026-07-26T01:40:58Z",
+    "updated_at": "2026-07-26T01:46:22Z",
+    "closed_at": "2026-07-26T01:46:21Z",
+    "merged": true,
+    "merged_at": "2026-07-26T01:46:21Z",
+    "merge_commit_sha": "1c7eb6cea6ecae18b84096766347a23ba1a494ce",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "dkelly",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "refs/pull/10/head",
+      "sha": "50af31b437034a292f322bd8f68a52aed1bd967c",
+      "label": "codex/fix-observation-count"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 11,
+    "title": "Compare 3-of-6 challenge subsets across shuffles",
+    "body": "## Summary\n- model ascending random 3-of-6 challenges in the attack state\n- add deterministic paired random-vs-tower Monte Carlo benchmarking\n- generate Markdown, JSON, CSV, and chart artifacts\n- document the CLI and add seeded regression coverage\n\n## Validation\n- `python -m pytest -q` \u2014 30 passed\n- 10,000 paired trials, seed 20260725 \u2014 all cracked/replayable within 30 observations\n- random mean crack/replay: 8.52 / 5.81\n- tower mean crack/replay: 9.51 / 6.45",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/11",
+    "created_at": "2026-07-26T03:06:05Z",
+    "updated_at": "2026-07-27T01:17:13Z",
+    "closed_at": "2026-07-27T01:17:13Z",
+    "merged": true,
+    "merged_at": "2026-07-27T01:17:13Z",
+    "merge_commit_sha": "13aaf0d54ff599b3d85acecf3eb5b3fc4e5bbccd",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "dkelly",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "refs/pull/11/head",
+      "sha": "bb76454c994a1499d13064e9ff3b230480a4c03a",
+      "label": "codex/challenge-subset-benchmark"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 12,
+    "title": "Document selective tower shuffle and challenge schedules",
+    "body": "## Summary\n\n- replace the invalid whole-key-swap comparison with a selective key-rotation specification\n- define a 6-key by 8-icon keypad and pressed-keys-plus-one shuffle\n- compare uniform 3-of-6 challenges with alternating {1,2,3}/{4,5,6}\n- document worked rotations, state advancement, security hypotheses, and future benchmark metrics\n\n## Validation\n\n- verified both numeric layouts preserve 48 unique icons and untouched rows\n- verified exactly two immediate candidate destinations\n- verified uniform overlap distribution and candidate-space formulas\n- `git diff --check`",
+    "state": "closed",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/12",
+    "created_at": "2026-07-27T02:20:50Z",
+    "updated_at": "2026-07-27T15:22:35Z",
+    "closed_at": "2026-07-27T15:22:35Z",
+    "merged": true,
+    "merged_at": "2026-07-27T15:22:35Z",
+    "merge_commit_sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "dkelly",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "refs/pull/12/head",
+      "sha": "41c3535c99ced1e7bc8604637bd7e6f1fce356a8",
+      "label": "codex/challenge-subset-protocol"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  },
+  {
+    "number": 13,
+    "title": "Implement selective 3-of-6 challenge protocol",
+    "body": "## Summary\n\n- add uniform and alternating-halves challenge schedulers with stable active-challenge state\n- add the pressed-keys-plus-one selective tower shuffle for 6-key by 8-icon layouts\n- make successful advancement idempotent across duplicate finish races\n- compare both schedules with paired, domain-separated benchmark trials\n- expand JSON, CSV, Markdown, and chart artifacts with scheduling and selective-shuffle metrics\n\n## Validation\n\n- `git diff --check`\n- `python -m py_compile src/challenge_schedule.py src/challenge_protocol.py src/keypad/keypad.py src/challenge_subset.py cli/challenge_subset_benchmark.py`\n- `python -m pytest -q` (48 passed)\n- default two-schedule CLI smoke run (20 paired scenarios)\n- single-schedule CLI smoke run (`alternating-halves`)\n- existing 6x8 4-of-4 crack/replay regression remains exactly four observations",
+    "state": "open",
+    "html_url": "https://gitea.donovankelly.xyz/dkelly/evilnkode/pulls/13",
+    "created_at": "2026-07-27T15:35:30Z",
+    "updated_at": "2026-07-27T15:35:30Z",
+    "closed_at": null,
+    "merged": false,
+    "merged_at": null,
+    "merge_commit_sha": null,
+    "draft": false,
+    "labels": [],
+    "milestone": null,
+    "comments": 0,
+    "author": "dkelly",
+    "base": {
+      "ref": "main",
+      "sha": "5c8d7a96d6d64c34cf5366b6e6e359147f966384",
+      "label": "main"
+    },
+    "head": {
+      "ref": "codex/selective-challenge-protocol",
+      "sha": "f5fbf225afe77cff820a38055406b77f1a48b12c",
+      "label": "codex/selective-challenge-protocol"
+    },
+    "discussion": [],
+    "reviews": [],
+    "review_comments": {}
+  }
+]
